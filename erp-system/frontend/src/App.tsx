@@ -6,6 +6,15 @@ import { useAuthStore } from './store';
 import AppLayout from './components/layout/AppLayout';
 import LoginPage from './pages/login/LoginPage';
 import DashboardPage from './pages/dashboard/DashboardPage';
+import ProductList from './pages/products/ProductList';
+import SupplierList from './pages/suppliers/SupplierList';
+import CustomerList from './pages/customers/CustomerList';
+import WarehouseList from './pages/warehouses/WarehouseList';
+import InventoryList from './pages/inventory/InventoryList';
+import PurchaseList from './pages/purchases/PurchaseList';
+import SaleList from './pages/sales/SaleList';
+import FinancePage from './pages/finance/FinancePage';
+import SettingsPage from './pages/settings/SettingsPage';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, isLoading, checkAuth } = useAuthStore();
@@ -41,12 +50,15 @@ const App: React.FC = () => {
           >
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<DashboardPage />} />
-            <Route path="products" element={<div>商品管理</div>} />
-            <Route path="inventory" element={<div>库存管理</div>} />
-            <Route path="purchases" element={<div>采购管理</div>} />
-            <Route path="sales" element={<div>销售管理</div>} />
-            <Route path="finance" element={<div>财务管理</div>} />
-            <Route path="settings" element={<div>系统设置</div>} />
+            <Route path="products" element={<ProductList />} />
+            <Route path="suppliers" element={<SupplierList />} />
+            <Route path="customers" element={<CustomerList />} />
+            <Route path="warehouses" element={<WarehouseList />} />
+            <Route path="inventory" element={<InventoryList />} />
+            <Route path="purchases" element={<PurchaseList />} />
+            <Route path="sales" element={<SaleList />} />
+            <Route path="finance" element={<FinancePage />} />
+            <Route path="settings" element={<SettingsPage />} />
           </Route>
         </Routes>
       </BrowserRouter>

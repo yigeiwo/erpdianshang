@@ -4,6 +4,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { databaseConfig, jwtConfig, appConfig } from './config';
 import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
+import { SupplierModule } from './modules/supplier/supplier.module';
+import { CustomerModule } from './modules/customer/customer.module';
+import { WarehouseModule } from './modules/warehouse/warehouse.module';
+import { ProductModule } from './modules/product/product.module';
+import { InventoryModule } from './modules/inventory/inventory.module';
+import { PurchaseModule } from './modules/purchase/purchase.module';
+import { SaleModule } from './modules/sale/sale.module';
+import { DataSourceModule } from './modules/data-source/data-source.module';
 
 @Module({
   imports: [
@@ -29,6 +37,14 @@ import { UserModule } from './modules/user/user.module';
     }),
     AuthModule,
     UserModule,
+    SupplierModule,
+    CustomerModule,
+    WarehouseModule,
+    ProductModule,
+    InventoryModule,
+    PurchaseModule,
+    SaleModule,
+    DataSourceModule,
   ],
 })
 export class AppModule {}

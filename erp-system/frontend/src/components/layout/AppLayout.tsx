@@ -10,6 +10,9 @@ import {
   LogoutOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
+  TeamOutlined,
+  BankOutlined,
+  DollarOutlined,
 } from '@ant-design/icons';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import type { MenuProps } from 'antd';
@@ -36,6 +39,21 @@ const AppLayout: React.FC = () => {
       label: '商品管理',
     },
     {
+      key: '/suppliers',
+      icon: <TeamOutlined />,
+      label: '供应商',
+    },
+    {
+      key: '/customers',
+      icon: <UserOutlined />,
+      label: '客户',
+    },
+    {
+      key: '/warehouses',
+      icon: <BankOutlined />,
+      label: '仓库',
+    },
+    {
       key: '/inventory',
       icon: <InboxOutlined />,
       label: '库存管理',
@@ -52,7 +70,7 @@ const AppLayout: React.FC = () => {
     },
     {
       key: '/finance',
-      icon: <UserOutlined />,
+      icon: <DollarOutlined />,
       label: '财务管理',
     },
     {
