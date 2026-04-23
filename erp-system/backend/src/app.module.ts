@@ -12,6 +12,7 @@ import { InventoryModule } from './modules/inventory/inventory.module';
 import { PurchaseModule } from './modules/purchase/purchase.module';
 import { SaleModule } from './modules/sale/sale.module';
 import { DataSourceModule } from './modules/data-source/data-source.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { DataSourceModule } from './modules/data-source/data-source.module';
     PurchaseModule,
     SaleModule,
     DataSourceModule,
+    AnalyticsModule,
   ],
 })
 export class AppModule {}
