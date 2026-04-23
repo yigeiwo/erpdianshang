@@ -34,7 +34,7 @@ export const authService = {
   async checkAuth(): Promise<boolean> {
     try {
       const response = await api.get('/auth/check');
-      return response.data.authenticated;
+      return response.data.data?.authenticated ?? false;
     } catch {
       return false;
     }

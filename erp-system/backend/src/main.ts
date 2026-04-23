@@ -3,6 +3,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -10,6 +11,8 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
   const port = configService.get<number>('app.port') || 3000;
   const frontendUrl = configService.get<string>('app.frontendUrl') || 'http://localhost:5173';
+
+  app.setGlobalPrefix('api');
 
   app.enableCors({
     origin: [frontendUrl, 'http://localhost:3000'],
@@ -27,6 +30,8 @@ async function bootstrap() {
     }),
   );
 
+  app.useGlobalInterceptors(new TransformInterceptor());
+
   const swaggerConfig = new DocumentBuilder()
     .setTitle('电商ERP系统 API')
     .setDescription('电商ERP系统 API 文档')
@@ -42,7 +47,7 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);
-  SwaggerModule.setup('api/docs', app, document);
+  SwaggerModule.setup('docs', app, document);
 
   await app.listen(port);
   console.log(`Application is running on: http://localhost:${port}`);
