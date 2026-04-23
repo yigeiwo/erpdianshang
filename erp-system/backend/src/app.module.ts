@@ -13,6 +13,7 @@ import { PurchaseModule } from './modules/purchase/purchase.module';
 import { SaleModule } from './modules/sale/sale.module';
 import { DataSourceModule } from './modules/data-source/data-source.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { ImportExportModule } from './modules/import-export/import-export.module';
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
     SaleModule,
     DataSourceModule,
     AnalyticsModule,
+    ImportExportModule,
   ],
 })
 export class AppModule {}
