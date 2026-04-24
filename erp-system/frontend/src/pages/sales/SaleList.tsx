@@ -1,29 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Table, Button, Space, Tag, Modal, message, Empty, Select } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { useNavigate } from 'react-router-dom';
+import { ReloadOutlined } from '@ant-design/icons';
 import { saleService, type SaleOrder } from '../../services';
 import SaleForm from './SaleForm';
-
-const statusMap: Record<string, { color: string; text: string }> = {
-  draft: { color: 'default', text: '草稿' },
-  pending: { color: 'orange', text: '待审批' },
-  approved: { color: 'blue', text: '已审批' },
-  rejected: { color: 'red', text: '已拒绝' },
-  in_progress: { color: 'processing', text: '进行中' },
-  completed: { color: 'green', text: '已完成' },
-  cancelled: { color: 'default', text: '已取消' },
-};
+import { statusMap, formatMoney } from '../../constants';
 
 const SaleList: React.FC = () => {
   const navigate = useNavigate();
   const [data, setData] = useState<SaleOrder[]>([]);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [pagination, setPagination] = useState({ current: 1, pageSize: 10, total: 0 });
   const [modalVisible, setModalVisible] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string | undefined>();
 
-  const fetchData = async (page = 1, pageSize = 10) => {
+  const fetchData = useCallback(async (page = 1, pageSize = 10) => {
     setLoading(true);
     try {
       const result = await saleService.getSales({ page, pageSize, status: statusFilter });
@@ -34,11 +27,17 @@ const SaleList: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [statusFilter]);
 
   useEffect(() => {
     fetchData();
-  }, [statusFilter]);
+  }, [fetchData]);
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    fetchData();
+    setTimeout(() => setRefreshing(false), 500);
+  };
 
   const handleView = (record: SaleOrder) => {
     navigate(`/sales/${record.id}`);
@@ -97,9 +96,9 @@ const SaleList: React.FC = () => {
     { title: '客户', dataIndex: ['customer', 'name'], key: 'customer' },
     { title: '仓库', dataIndex: ['warehouse', 'name'], key: 'warehouse' },
     { title: '订单金额', dataIndex: 'totalAmount', key: 'totalAmount', width: 120,
-      render: (v) => `¥${Number(v || 0).toFixed(2)}` },
+      render: formatMoney },
     { title: '最终金额', dataIndex: 'finalAmount', key: 'finalAmount', width: 120,
-      render: (v) => `¥${Number(v || 0).toFixed(2)}` },
+      render: formatMoney },
     {
       title: '状态',
       dataIndex: 'status',
@@ -133,9 +132,14 @@ const SaleList: React.FC = () => {
 
   return (
     <div>
-      <h2>销售管理</h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <h2 style={{ margin: 0 }}>销售管理</h2>
+        <Space>
+          <Button icon={<ReloadOutlined />} onClick={handleRefresh} loading={refreshing}>刷新</Button>
+          <Button type="primary" onClick={() => setModalVisible(true)}>新建销售单</Button>
+        </Space>
+      </div>
       <Space style={{ marginBottom: 16 }} wrap>
-        <Button type="primary" onClick={() => setModalVisible(true)}>新建销售单</Button>
         <Select
           placeholder="筛选状态"
           allowClear
