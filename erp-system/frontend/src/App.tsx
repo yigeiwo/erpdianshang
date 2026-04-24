@@ -17,11 +17,12 @@ import FinancePage from './pages/finance/FinancePage';
 import SettingsPage from './pages/settings/SettingsPage';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isAuthenticated, isLoading, checkAuth } = useAuthStore();
+  const { isAuthenticated, isLoading } = useAuthStore();
+  const checkAuth = useAuthStore((state) => state.checkAuth);
 
   useEffect(() => {
     checkAuth();
-  }, [checkAuth]);
+  }, []);
 
   if (isLoading) {
     return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>加载中...</div>;
