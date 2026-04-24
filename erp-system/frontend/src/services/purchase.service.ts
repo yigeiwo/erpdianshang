@@ -76,6 +76,11 @@ export const purchaseService = {
     return response.data.data!;
   },
 
+  async submitPurchase(id: string): Promise<PurchaseOrder> {
+    const response = await api.post<ApiResponse<PurchaseOrder>>(`/purchases/${id}/submit`, {});
+    return response.data.data!;
+  },
+
   async approvePurchase(id: string): Promise<PurchaseOrder> {
     const response = await api.post<ApiResponse<PurchaseOrder>>(`/purchases/${id}/approve`, {});
     return response.data.data!;

@@ -50,6 +50,22 @@ const SaleList: React.FC = () => {
     }
   };
 
+  const handleSubmit = (record: SaleOrder) => {
+    Modal.confirm({
+      title: '提交确认',
+      content: `确认提交销售单 ${record.orderNo}？提交后将进入待审批状态。`,
+      onOk: async () => {
+        try {
+          await saleService.submitSale(record.id);
+          message.success('提交成功');
+          fetchData();
+        } catch (error: any) {
+          message.error(error.response?.data?.message || '提交失败');
+        }
+      },
+    });
+  };
+
   const handleApprove = (record: SaleOrder) => {
     Modal.confirm({
       title: '审批确认',
@@ -107,6 +123,9 @@ const SaleList: React.FC = () => {
       render: (_, record) => (
         <Space>
           <Button type="link" size="small" onClick={() => handleView(record)}>查看</Button>
+          {record.status === 'draft' && (
+            <Button type="link" size="small" onClick={() => handleSubmit(record)}>提交</Button>
+          )}
           {record.status === 'pending' && (
             <Button type="link" size="small" onClick={() => handleApprove(record)}>审批</Button>
           )}
@@ -173,6 +192,12 @@ const SaleList: React.FC = () => {
         }}
         footer={
           <Space>
+            {selectedOrder?.status === 'draft' && (
+              <Button type="primary" onClick={() => {
+                setDetailVisible(false);
+                handleSubmit(selectedOrder);
+              }}>提交</Button>
+            )}
             {selectedOrder?.status === 'pending' && (
               <Button type="primary" onClick={() => {
                 setDetailVisible(false);

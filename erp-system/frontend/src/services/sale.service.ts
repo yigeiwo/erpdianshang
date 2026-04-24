@@ -83,6 +83,11 @@ export const saleService = {
     return response.data.data!;
   },
 
+  async submitSale(id: string): Promise<SaleOrder> {
+    const response = await api.post<ApiResponse<SaleOrder>>(`/sales/${id}/submit`, {});
+    return response.data.data!;
+  },
+
   async approveSale(id: string): Promise<SaleOrder> {
     const response = await api.post<ApiResponse<SaleOrder>>(`/sales/${id}/approve`, {});
     return response.data.data!;
