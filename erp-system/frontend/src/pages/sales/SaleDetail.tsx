@@ -3,16 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Button, Space, Tag, Card, Table, Descriptions, message, Modal, Divider } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { saleService, type SaleOrder } from '../../services';
-
-const statusMap: Record<string, { color: string; text: string }> = {
-  draft: { color: 'default', text: '草稿' },
-  pending: { color: 'orange', text: '待审批' },
-  approved: { color: 'blue', text: '已审批' },
-  rejected: { color: 'red', text: '已拒绝' },
-  in_progress: { color: 'processing', text: '进行中' },
-  completed: { color: 'green', text: '已完成' },
-  cancelled: { color: 'default', text: '已取消' },
-};
+import { statusMap, formatMoney, formatDate } from '../../constants';
 
 const SaleDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -99,7 +90,7 @@ const SaleDetail: React.FC = () => {
       dataIndex: 'salePrice',
       key: 'salePrice',
       width: 120,
-      render: (v) => `¥${Number(v || 0).toFixed(2)}`,
+      render: formatMoney,
     },
     {
       title: '折扣率',
@@ -121,13 +112,13 @@ const SaleDetail: React.FC = () => {
       width: 120,
       render: (_, record) => {
         const amount = record.quantity * record.salePrice * (1 - (record.discountRate || 0) / 100) * (1 + (record.taxRate || 0) / 100);
-        return `¥${Number(amount || 0).toFixed(2)}`;
+        return formatMoney(amount);
       },
     },
   ];
 
   if (loading) {
-    return <div style={{ padding: 24 }}>加载中...</div>;
+    return <div style={{ padding: 24, textAlign: 'center' }}>加载中...</div>;
   }
 
   if (!order) {
@@ -155,18 +146,18 @@ const SaleDetail: React.FC = () => {
       >
         <Descriptions column={2} bordered size="small">
           <Descriptions.Item label="单据编号">{order.orderNo}</Descriptions.Item>
-          <Descriptions.Item label="订单日期">{order.orderDate}</Descriptions.Item>
+          <Descriptions.Item label="订单日期">{formatDate(order.orderDate)}</Descriptions.Item>
           <Descriptions.Item label="客户">{order.customer?.name}</Descriptions.Item>
           <Descriptions.Item label="仓库">{order.warehouse?.name}</Descriptions.Item>
           <Descriptions.Item label="订单金额">
-            ¥{Number(order.totalAmount || 0).toFixed(2)}
+            {formatMoney(order.totalAmount)}
           </Descriptions.Item>
           <Descriptions.Item label="折扣金额">
-            ¥{Number(order.discountAmount || 0).toFixed(2)}
+            {formatMoney(order.discountAmount)}
           </Descriptions.Item>
           <Descriptions.Item label="最终金额">
             <strong style={{ color: '#1890ff' }}>
-              ¥{Number(order.finalAmount || 0).toFixed(2)}
+              {formatMoney(order.finalAmount)}
             </strong>
           </Descriptions.Item>
           <Descriptions.Item label="状态">

@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { Table, Button, Space, Tag, Modal, message, Empty, Card, Row, Col, Statistic, Tabs, List, Typography, Divider } from 'antd';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Table, Button, Tag, Card, Row, Col, Statistic, Tabs } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { useNavigate } from 'react-router-dom';
+import { ReloadOutlined, FileTextOutlined, ShoppingOutlined, ShoppingCartOutlined } from '@ant-design/icons';
 import { purchaseService, saleService } from '../../services';
-import { FileTextOutlined, ShoppingOutlined, ShoppingCartOutlined } from '@ant-design/icons';
-
-const { Text } = Typography;
+import { statusMap, formatMoney, formatDate } from '../../constants';
 
 interface UnifiedOrder {
   id: string;
@@ -24,27 +23,21 @@ interface UnifiedOrder {
   items?: any[];
 }
 
-const statusMap: Record<string, { color: string; text: string }> = {
-  draft: { color: 'default', text: '草稿' },
-  pending: { color: 'orange', text: '待审批' },
-  approved: { color: 'blue', text: '已审批' },
-  rejected: { color: 'red', text: '已拒绝' },
-  in_progress: { color: 'processing', text: '进行中' },
-  completed: { color: 'green', text: '已完成' },
-  cancelled: { color: 'default', text: '已取消' },
+const getTypeTag = (type: string) => {
+  return type === 'purchase'
+    ? <Tag icon={<ShoppingCartOutlined />} color="blue">采购</Tag>
+    : <Tag icon={<ShoppingOutlined />} color="green">销售</Tag>;
 };
 
 const OrderList: React.FC = () => {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [purchaseOrders, setPurchaseOrders] = useState<UnifiedOrder[]>([]);
   const [saleOrders, setSaleOrders] = useState<UnifiedOrder[]>([]);
   const [activeTab, setActiveTab] = useState('all');
-  const [detailVisible, setDetailVisible] = useState(false);
-  const [selectedOrder, setSelectedOrder] = useState<UnifiedOrder | null>(null);
 
-  const fetchOrders = async () => {
-    setLoading(true);
+  const fetchOrders = useCallback(async () => {
+    setRefreshing(true);
     try {
       const [pRes, sRes] = await Promise.all([
         purchaseService.getPurchases({ page: 1, pageSize: 100 }),
@@ -62,7 +55,6 @@ const OrderList: React.FC = () => {
         orderDate: item.orderDate,
         remark: item.remark,
         supplierName: item.supplier?.name,
-        customerName: undefined,
         warehouseName: item.warehouse?.name,
         creatorName: item.creator?.realName,
         items: item.items,
@@ -78,7 +70,6 @@ const OrderList: React.FC = () => {
         itemCount: item.items?.length || 0,
         orderDate: item.orderDate,
         remark: item.remark,
-        supplierName: undefined,
         customerName: item.customer?.name,
         warehouseName: item.warehouse?.name,
         creatorName: item.creator?.realName,
@@ -88,27 +79,18 @@ const OrderList: React.FC = () => {
       setPurchaseOrders(purchaseData);
       setSaleOrders(saleData);
     } catch (error: any) {
-      message.error(error.response?.data?.message || '获取订单失败');
+      console.error('获取订单失败:', error);
     } finally {
-      setLoading(false);
+      setRefreshing(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchOrders();
-  }, []);
+  }, [fetchOrders]);
 
-  const getFilteredOrders = () => {
-    switch (activeTab) {
-      case 'purchase':
-        return purchaseOrders;
-      case 'sale':
-        return saleOrders;
-      default:
-        return [...purchaseOrders, ...saleOrders].sort((a, b) =>
-          new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime()
-        );
-    }
+  const handleRefresh = () => {
+    fetchOrders();
   };
 
   const handleGoDetail = (record: UnifiedOrder) => {
@@ -119,10 +101,17 @@ const OrderList: React.FC = () => {
     }
   };
 
-  const getTypeTag = (type: string) => {
-    return type === 'purchase'
-      ? <Tag icon={<ShoppingCartOutlined />} color="blue">采购</Tag>
-      : <Tag icon={<ShoppingOutlined />} color="green">销售</Tag>;
+  const getFilteredOrders = () => {
+    switch (activeTab) {
+      case 'purchase':
+        return purchaseOrders;
+      case 'sale':
+        return saleOrders;
+      default:
+        return [...purchaseOrders, ...saleOrders].sort(
+          (a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime()
+        );
+    }
   };
 
   const columns: ColumnsType<UnifiedOrder> = [
@@ -133,9 +122,7 @@ const OrderList: React.FC = () => {
       render: (_, record) => (
         <div>
           <div style={{ fontWeight: 500 }}>{record.orderNo}</div>
-          <div style={{ fontSize: 12, color: '#999' }}>
-            {record.orderDate?.split('T')[0] || record.orderDate}
-          </div>
+          <div style={{ fontSize: 12, color: '#999' }}>{formatDate(record.orderDate)}</div>
         </div>
       ),
     },
@@ -150,9 +137,7 @@ const OrderList: React.FC = () => {
       title: '交易对象',
       key: 'target',
       width: 120,
-      render: (_, record) => (
-        <span>{record.supplierName || record.customerName || '-'}</span>
-      ),
+      render: (_, record) => <span>{record.supplierName || record.customerName || '-'}</span>,
     },
     {
       title: '仓库',
@@ -173,20 +158,20 @@ const OrderList: React.FC = () => {
       dataIndex: 'totalAmount',
       key: 'totalAmount',
       width: 110,
-      render: (v) => <span style={{ color: '#1890ff' }}>¥{Number(v || 0).toFixed(2)}</span>,
+      render: (v) => <span style={{ color: '#1890ff' }}>{formatMoney(v)}</span>,
     },
     {
       title: '实付金额',
       dataIndex: 'finalAmount',
       key: 'finalAmount',
       width: 110,
-      render: (v) => <strong>¥{Number(v || 0).toFixed(2)}</strong>,
+      render: (v) => <strong>{formatMoney(v)}</strong>,
     },
     {
       title: '状态',
       dataIndex: 'status',
       key: 'status',
-      width: 90,
+      width: 100,
       render: (v) => {
         const status = statusMap[v] || { color: 'default', text: v };
         return <Tag color={status.color}>{status.text}</Tag>;
@@ -195,13 +180,11 @@ const OrderList: React.FC = () => {
     {
       title: '操作',
       key: 'action',
-      width: 160,
+      width: 100,
       render: (_, record) => (
-        <Space>
-          <Button type="link" size="small" onClick={() => handleGoDetail(record)}>
-            查看详情
-          </Button>
-        </Space>
+        <Button type="link" size="small" onClick={() => handleGoDetail(record)}>
+          查看详情
+        </Button>
       ),
     },
   ];
@@ -220,14 +203,9 @@ const OrderList: React.FC = () => {
         <Table
           columns={columns}
           dataSource={getFilteredOrders()}
-          loading={loading}
+          loading={refreshing}
           rowKey="id"
-          pagination={{
-            pageSize: 10,
-            showSizeChanger: true,
-            showTotal: (total) => `共 ${total} 条`,
-          }}
-          locale={{ emptyText: <Empty description="暂无订单" /> }}
+          pagination={{ pageSize: 10, showSizeChanger: true, showTotal: (total) => `共 ${total} 条` }}
         />
       ),
     },
@@ -238,14 +216,9 @@ const OrderList: React.FC = () => {
         <Table
           columns={columns}
           dataSource={purchaseOrders}
-          loading={loading}
+          loading={refreshing}
           rowKey="id"
-          pagination={{
-            pageSize: 10,
-            showSizeChanger: true,
-            showTotal: (total) => `共 ${total} 条`,
-          }}
-          locale={{ emptyText: <Empty description="暂无采购订单" /> }}
+          pagination={{ pageSize: 10, showSizeChanger: true, showTotal: (total) => `共 ${total} 条` }}
         />
       ),
     },
@@ -256,14 +229,9 @@ const OrderList: React.FC = () => {
         <Table
           columns={columns}
           dataSource={saleOrders}
-          loading={loading}
+          loading={refreshing}
           rowKey="id"
-          pagination={{
-            pageSize: 10,
-            showSizeChanger: true,
-            showTotal: (total) => `共 ${total} 条`,
-          }}
-          locale={{ emptyText: <Empty description="暂无销售订单" /> }}
+          pagination={{ pageSize: 10, showSizeChanger: true, showTotal: (total) => `共 ${total} 条` }}
         />
       ),
     },
@@ -271,26 +239,22 @@ const OrderList: React.FC = () => {
 
   return (
     <div>
-      <h2>订单管理</h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <h2 style={{ margin: 0 }}>订单管理</h2>
+        <Button icon={<ReloadOutlined />} onClick={handleRefresh} loading={refreshing}>
+          刷新
+        </Button>
+      </div>
 
       <Row gutter={16} style={{ marginBottom: 24 }}>
         <Col span={6}>
           <Card size="small">
-            <Statistic
-              title="订单总数"
-              value={allOrders.length}
-              prefix={<FileTextOutlined />}
-            />
+            <Statistic title="订单总数" value={allOrders.length} prefix={<FileTextOutlined />} />
           </Card>
         </Col>
         <Col span={6}>
           <Card size="small">
-            <Statistic
-              title="订单总额"
-              value={totalAmount}
-              precision={2}
-              prefix="¥"
-            />
+            <Statistic title="订单总额" value={totalAmount} precision={2} prefix="¥" />
           </Card>
         </Col>
         <Col span={6}>
@@ -316,107 +280,8 @@ const OrderList: React.FC = () => {
       </Row>
 
       <Card>
-        <Tabs
-          activeKey={activeTab}
-          onChange={setActiveTab}
-          items={orderTabItems}
-        />
+        <Tabs activeKey={activeTab} onChange={setActiveTab} items={orderTabItems} />
       </Card>
-
-      <Modal
-        title="订单详情"
-        open={detailVisible}
-        onCancel={() => {
-          setDetailVisible(false);
-          setSelectedOrder(null);
-        }}
-        footer={
-          <Space>
-            <Button onClick={() => setDetailVisible(false)}>关闭</Button>
-            <Button type="primary" onClick={() => {
-              if (selectedOrder) handleGoDetail(selectedOrder);
-            }}>
-              进入详情页
-            </Button>
-          </Space>
-        }
-        width={800}
-      >
-        {selectedOrder && (
-          <div>
-            <Row gutter={16}>
-              <Col span={12}>
-                <Text strong>订单编号：</Text> {selectedOrder.orderNo}
-              </Col>
-              <Col span={12}>
-                <Text strong>订单日期：</Text> {selectedOrder.orderDate?.split('T')[0]}
-              </Col>
-            </Row>
-            <Divider />
-            <Row gutter={16}>
-              <Col span={8}>
-                <Text strong>类型：</Text> {getTypeTag(selectedOrder.type)}
-              </Col>
-              <Col span={8}>
-                <Text strong>{selectedOrder.type === 'purchase' ? '供应商' : '客户'}：</Text>
-                {selectedOrder.supplierName || selectedOrder.customerName}
-              </Col>
-              <Col span={8}>
-                <Text strong>仓库：</Text> {selectedOrder.warehouseName}
-              </Col>
-            </Row>
-            <Divider />
-            <Row gutter={16}>
-              <Col span={8}>
-                <Text strong>订单金额：</Text> ¥{Number(selectedOrder.totalAmount || 0).toFixed(2)}
-              </Col>
-              <Col span={8}>
-                <Text strong>实付金额：</Text>
-                <span style={{ color: '#1890ff', fontWeight: 'bold' }}>
-                  ¥{Number(selectedOrder.finalAmount || 0).toFixed(2)}
-                </span>
-              </Col>
-              <Col span={8}>
-                <Text strong>状态：</Text>
-                <Tag color={statusMap[selectedOrder.status]?.color}>
-                  {statusMap[selectedOrder.status]?.text}
-                </Tag>
-              </Col>
-            </Row>
-            {selectedOrder.remark && (
-              <>
-                <Divider />
-                <div>
-                  <Text strong>备注：</Text> {selectedOrder.remark}
-                </div>
-              </>
-            )}
-            <Divider />
-            <Text strong>订单明细：</Text>
-            <List
-              size="small"
-              bordered
-              dataSource={selectedOrder.items || []}
-              renderItem={(item: any) => (
-                <List.Item>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-                    <span>
-                      {item.product?.name || item.product?.productCode || '商品'}
-                      {selectedOrder.type === 'purchase' ? '' : ` × ${item.quantity}`}
-                    </span>
-                    <span>
-                      {selectedOrder.type === 'purchase'
-                        ? `¥${Number(item.costPrice || 0).toFixed(2)} × ${item.quantity}`
-                        : `¥${Number(item.salePrice || 0).toFixed(2)} × ${item.quantity}`
-                      }
-                    </span>
-                  </div>
-                </List.Item>
-              )}
-            />
-          </div>
-        )}
-      </Modal>
     </div>
   );
 };
