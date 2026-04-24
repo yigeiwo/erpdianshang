@@ -54,7 +54,7 @@ const FinancePage: React.FC = () => {
     { title: '客户', dataIndex: 'customer', key: 'customer' },
     { title: '单据号', dataIndex: 'orderNo', key: 'orderNo', width: 150 },
     { title: '金额', dataIndex: 'amount', key: 'amount',
-      render: (v) => `¥${v?.toFixed(2)}` },
+      render: (v) => `¥${Number(v || 0).toFixed(2)}` },
     {
       title: '状态',
       dataIndex: 'status',
@@ -82,7 +82,7 @@ const FinancePage: React.FC = () => {
     { title: '供应商', dataIndex: 'supplier', key: 'supplier' },
     { title: '单据号', dataIndex: 'orderNo', key: 'orderNo', width: 150 },
     { title: '金额', dataIndex: 'amount', key: 'amount',
-      render: (v) => `¥${v?.toFixed(2)}` },
+      render: (v) => `¥${Number(v || 0).toFixed(2)}` },
     {
       title: '状态',
       dataIndex: 'status',
@@ -108,7 +108,7 @@ const FinancePage: React.FC = () => {
   const handleReceive = (record: ReceivableRecord) => {
     Modal.confirm({
       title: '确认收款',
-      content: `确认收到客户 ${record.customer} 的款项 ¥${record.amount.toFixed(2)}？`,
+      content: `确认收到客户 ${record.customer} 的款项 ¥${Number(record.amount || 0).toFixed(2)}？`,
       onOk: () => {
         message.success('收款成功');
       },
@@ -118,7 +118,7 @@ const FinancePage: React.FC = () => {
   const handlePay = (record: PayableRecord) => {
     Modal.confirm({
       title: '确认付款',
-      content: `确认支付给供应商 ${record.supplier} 的款项 ¥${record.amount.toFixed(2)}？`,
+      content: `确认支付给供应商 ${record.supplier} 的款项 ¥${Number(record.amount || 0).toFixed(2)}？`,
       onOk: () => {
         message.success('付款成功');
       },

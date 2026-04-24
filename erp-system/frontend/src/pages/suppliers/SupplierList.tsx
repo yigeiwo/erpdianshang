@@ -64,7 +64,7 @@ const SupplierList: React.FC = () => {
     { title: '邮箱', dataIndex: 'email', key: 'email' },
     { title: '地址', dataIndex: 'address', key: 'address', ellipsis: true },
     { title: '累计金额', dataIndex: 'totalAmount', key: 'totalAmount',
-      render: (v) => `¥${v?.toFixed(2) || '0.00'}` },
+      render: (v) => `¥${Number(v || 0).toFixed(2)}` },
     {
       title: '状态',
       dataIndex: 'isActive',
@@ -158,7 +158,7 @@ const SupplierList: React.FC = () => {
             <p><strong>电话：</strong>{selectedSupplier.phone || '-'}</p>
             <p><strong>邮箱：</strong>{selectedSupplier.email || '-'}</p>
             <p><strong>地址：</strong>{selectedSupplier.address || '-'}</p>
-            <p><strong>累计金额：</strong>¥{selectedSupplier.totalAmount?.toFixed(2) || '0.00'}</p>
+            <p><strong>累计金额：</strong>¥{Number(selectedSupplier.totalAmount || 0).toFixed(2)}</p>
             <p><strong>状态：</strong>
               <Tag color={selectedSupplier.isActive ? 'green' : 'red'}>
                 {selectedSupplier.isActive ? '启用' : '禁用'}

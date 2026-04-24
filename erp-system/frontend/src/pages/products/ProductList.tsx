@@ -70,9 +70,9 @@ const ProductList: React.FC = () => {
     { title: '供应商', dataIndex: ['supplier', 'name'], key: 'supplier' },
     { title: '单位', dataIndex: 'unit', key: 'unit', width: 80 },
     { title: '成本价', dataIndex: 'costPrice', key: 'costPrice', width: 100,
-      render: (v) => `¥${v?.toFixed(2) || '0.00'}` },
+      render: (v) => `¥${Number(v || 0).toFixed(2)}` },
     { title: '销售价', dataIndex: 'salePrice', key: 'salePrice', width: 100,
-      render: (v) => `¥${v?.toFixed(2) || '0.00'}` },
+      render: (v) => `¥${Number(v || 0).toFixed(2)}` },
     { title: '库存', dataIndex: 'stock', key: 'stock', width: 80 },
     {
       title: '状态',

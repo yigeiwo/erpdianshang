@@ -103,9 +103,9 @@ const SaleList: React.FC = () => {
     { title: '客户', dataIndex: ['customer', 'name'], key: 'customer' },
     { title: '仓库', dataIndex: ['warehouse', 'name'], key: 'warehouse' },
     { title: '订单金额', dataIndex: 'totalAmount', key: 'totalAmount', width: 120,
-      render: (v) => `¥${v?.toFixed(2) || '0.00'}` },
+      render: (v) => `¥${Number(v || 0).toFixed(2)}` },
     { title: '最终金额', dataIndex: 'finalAmount', key: 'finalAmount', width: 120,
-      render: (v) => `¥${v?.toFixed(2) || '0.00'}` },
+      render: (v) => `¥${Number(v || 0).toFixed(2)}` },
     {
       title: '状态',
       dataIndex: 'status',
@@ -220,9 +220,9 @@ const SaleList: React.FC = () => {
             <p><strong>单据编号：</strong>{selectedOrder.orderNo}</p>
             <p><strong>客户：</strong>{selectedOrder.customer?.name}</p>
             <p><strong>仓库：</strong>{selectedOrder.warehouse?.name}</p>
-            <p><strong>订单金额：</strong>¥{selectedOrder.totalAmount?.toFixed(2)}</p>
-            <p><strong>折扣金额：</strong>¥{selectedOrder.discountAmount?.toFixed(2)}</p>
-            <p><strong>最终金额：</strong>¥{selectedOrder.finalAmount?.toFixed(2)}</p>
+            <p><strong>订单金额：</strong>¥{Number(selectedOrder.totalAmount || 0).toFixed(2)}</p>
+            <p><strong>折扣金额：</strong>¥{Number(selectedOrder.discountAmount || 0).toFixed(2)}</p>
+            <p><strong>最终金额：</strong>¥{Number(selectedOrder.finalAmount || 0).toFixed(2)}</p>
             <p><strong>状态：</strong>
               <Tag color={statusMap[selectedOrder.status]?.color}>
                 {statusMap[selectedOrder.status]?.text}
@@ -241,7 +241,7 @@ const SaleList: React.FC = () => {
                     { title: '商品编码', dataIndex: ['product', 'productCode'], key: 'code' },
                     { title: '数量', dataIndex: 'quantity', key: 'quantity' },
                     { title: '单价', dataIndex: 'salePrice', key: 'salePrice',
-                      render: (v) => `¥${v?.toFixed(2)}` },
+                      render: (v) => `¥${Number(v || 0).toFixed(2)}` },
                     { title: '税率', dataIndex: 'taxRate', key: 'taxRate',
                       render: (v) => `${v}%` },
                   ]}
