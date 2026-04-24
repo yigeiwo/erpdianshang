@@ -13,6 +13,7 @@ import {
   TeamOutlined,
   BankOutlined,
   DollarOutlined,
+  FileTextOutlined,
 } from '@ant-design/icons';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import type { MenuProps } from 'antd';
@@ -67,6 +68,11 @@ const AppLayout: React.FC = () => {
       key: '/sales',
       icon: <ShoppingCartOutlined />,
       label: '销售管理',
+    },
+    {
+      key: '/orders',
+      icon: <FileTextOutlined />,
+      label: '订单管理',
     },
     {
       key: '/finance',
