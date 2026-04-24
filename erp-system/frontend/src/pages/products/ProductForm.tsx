@@ -140,6 +140,10 @@ const ProductForm: React.FC<ProductFormProps> = ({ id, onSuccess, onCancel }) =>
           <InputNumber min={0} style={{ width: '100%' }} placeholder="0" />
         </Form.Item>
 
+        <Form.Item label="商品图片" name="imageUrl">
+          <Input placeholder="请输入图片URL" />
+        </Form.Item>
+
         <Form.Item label="描述" name="description">
           <Input.TextArea rows={3} placeholder="请输入商品描述" />
         </Form.Item>

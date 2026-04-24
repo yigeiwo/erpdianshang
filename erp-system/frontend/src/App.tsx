@@ -12,7 +12,9 @@ import CustomerList from './pages/customers/CustomerList';
 import WarehouseList from './pages/warehouses/WarehouseList';
 import InventoryList from './pages/inventory/InventoryList';
 import PurchaseList from './pages/purchases/PurchaseList';
+import PurchaseDetail from './pages/purchases/PurchaseDetail';
 import SaleList from './pages/sales/SaleList';
+import SaleDetail from './pages/sales/SaleDetail';
 import FinancePage from './pages/finance/FinancePage';
 import SettingsPage from './pages/settings/SettingsPage';
 
@@ -68,7 +70,9 @@ const App: React.FC = () => {
             <Route path="warehouses" element={<WarehouseList />} />
             <Route path="inventory" element={<InventoryList />} />
             <Route path="purchases" element={<PurchaseList />} />
+            <Route path="purchases/:id" element={<PurchaseDetail />} />
             <Route path="sales" element={<SaleList />} />
+            <Route path="sales/:id" element={<SaleDetail />} />
             <Route path="finance" element={<FinancePage />} />
             <Route path="settings" element={<SettingsPage />} />
           </Route>

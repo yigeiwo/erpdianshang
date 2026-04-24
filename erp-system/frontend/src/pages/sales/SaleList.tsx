@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Button, Space, Tag, Modal, message, Empty, Select } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
+import { useNavigate } from 'react-router-dom';
 import { saleService, type SaleOrder } from '../../services';
 import SaleForm from './SaleForm';
 
@@ -15,12 +16,11 @@ const statusMap: Record<string, { color: string; text: string }> = {
 };
 
 const SaleList: React.FC = () => {
+  const navigate = useNavigate();
   const [data, setData] = useState<SaleOrder[]>([]);
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState({ current: 1, pageSize: 10, total: 0 });
   const [modalVisible, setModalVisible] = useState(false);
-  const [detailVisible, setDetailVisible] = useState(false);
-  const [selectedOrder, setSelectedOrder] = useState<SaleOrder | null>(null);
   const [statusFilter, setStatusFilter] = useState<string | undefined>();
 
   const fetchData = async (page = 1, pageSize = 10) => {
@@ -40,14 +40,8 @@ const SaleList: React.FC = () => {
     fetchData();
   }, [statusFilter]);
 
-  const handleView = async (record: SaleOrder) => {
-    try {
-      const order = await saleService.getSale(record.id);
-      setSelectedOrder(order);
-      setDetailVisible(true);
-    } catch (error: any) {
-      message.error('获取详情失败');
-    }
+  const handleView = (record: SaleOrder) => {
+    navigate(`/sales/${record.id}`);
   };
 
   const handleSubmit = (record: SaleOrder) => {
@@ -182,74 +176,6 @@ const SaleList: React.FC = () => {
           }}
           onCancel={() => setModalVisible(false)}
         />
-      </Modal>
-      <Modal
-        title="销售单详情"
-        open={detailVisible}
-        onCancel={() => {
-          setDetailVisible(false);
-          setSelectedOrder(null);
-        }}
-        footer={
-          <Space>
-            {selectedOrder?.status === 'draft' && (
-              <Button type="primary" onClick={() => {
-                setDetailVisible(false);
-                handleSubmit(selectedOrder);
-              }}>提交</Button>
-            )}
-            {selectedOrder?.status === 'pending' && (
-              <Button type="primary" onClick={() => {
-                setDetailVisible(false);
-                handleApprove(selectedOrder);
-              }}>审批</Button>
-            )}
-            {selectedOrder?.status === 'approved' && (
-              <Button type="primary" onClick={() => {
-                setDetailVisible(false);
-                handleShip(selectedOrder);
-              }}>出库</Button>
-            )}
-            <Button onClick={() => setDetailVisible(false)}>关闭</Button>
-          </Space>
-        }
-        width={700}
-      >
-        {selectedOrder && (
-          <div>
-            <p><strong>单据编号：</strong>{selectedOrder.orderNo}</p>
-            <p><strong>客户：</strong>{selectedOrder.customer?.name}</p>
-            <p><strong>仓库：</strong>{selectedOrder.warehouse?.name}</p>
-            <p><strong>订单金额：</strong>¥{Number(selectedOrder.totalAmount || 0).toFixed(2)}</p>
-            <p><strong>折扣金额：</strong>¥{Number(selectedOrder.discountAmount || 0).toFixed(2)}</p>
-            <p><strong>最终金额：</strong>¥{Number(selectedOrder.finalAmount || 0).toFixed(2)}</p>
-            <p><strong>状态：</strong>
-              <Tag color={statusMap[selectedOrder.status]?.color}>
-                {statusMap[selectedOrder.status]?.text}
-              </Tag>
-            </p>
-            {selectedOrder.items?.length > 0 && (
-              <>
-                <h4>销售明细</h4>
-                <Table
-                  size="small"
-                  dataSource={selectedOrder.items}
-                  rowKey="id"
-                  pagination={false}
-                  columns={[
-                    { title: '商品', dataIndex: ['product', 'name'], key: 'product' },
-                    { title: '商品编码', dataIndex: ['product', 'productCode'], key: 'code' },
-                    { title: '数量', dataIndex: 'quantity', key: 'quantity' },
-                    { title: '单价', dataIndex: 'salePrice', key: 'salePrice',
-                      render: (v) => `¥${Number(v || 0).toFixed(2)}` },
-                    { title: '税率', dataIndex: 'taxRate', key: 'taxRate',
-                      render: (v) => `${v}%` },
-                  ]}
-                />
-              </>
-            )}
-          </div>
-        )}
       </Modal>
     </div>
   );
