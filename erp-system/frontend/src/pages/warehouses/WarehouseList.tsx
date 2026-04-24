@@ -1,19 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import { Table, Button, Space, Tag, Modal, message, Empty } from 'antd';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Table, Button, Space, Modal, message, Empty } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
+import { ReloadOutlined } from '@ant-design/icons';
 import { warehouseService, type Warehouse } from '../../services';
 import WarehouseForm from './WarehouseForm';
+import { isActiveTag } from '../../constants';
 
 const WarehouseList: React.FC = () => {
   const [data, setData] = useState<Warehouse[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [pagination, setPagination] = useState({ current: 1, pageSize: 10, total: 0 });
   const [modalVisible, setModalVisible] = useState(false);
   const [editingId, setEditingId] = useState<string | undefined>();
   const [detailVisible, setDetailVisible] = useState(false);
   const [selectedWarehouse, setSelectedWarehouse] = useState<Warehouse | null>(null);
 
-  const fetchData = async (page = 1, pageSize = 10) => {
+  const fetchData = useCallback(async (page = 1, pageSize = 10) => {
     setLoading(true);
     try {
       const result = await warehouseService.getWarehouses({ page, pageSize });
@@ -24,11 +27,17 @@ const WarehouseList: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    fetchData();
+    setTimeout(() => setRefreshing(false), 500);
+  };
 
   const handleEdit = (record: Warehouse) => {
     setSelectedWarehouse(record);
@@ -63,12 +72,7 @@ const WarehouseList: React.FC = () => {
     { title: '管理员', dataIndex: 'manager', key: 'manager' },
     { title: '联系电话', dataIndex: 'phone', key: 'phone' },
     { title: '容量', dataIndex: 'capacity', key: 'capacity' },
-    {
-      title: '状态',
-      dataIndex: 'isActive',
-      key: 'isActive',
-      render: (v) => <Tag color={v ? 'green' : 'red'}>{v ? '启用' : '禁用'}</Tag>,
-    },
+    { title: '状态', dataIndex: 'isActive', key: 'isActive', render: isActiveTag },
     {
       title: '操作',
       key: 'action',
@@ -85,23 +89,19 @@ const WarehouseList: React.FC = () => {
 
   return (
     <div>
-      <h2>仓库管理</h2>
-      <Space style={{ marginBottom: 16 }}>
-        <Button
-          type="primary"
-          onClick={() => {
-            setEditingId(undefined);
-            setSelectedWarehouse(null);
-            setModalVisible(true);
-          }}
-        >
-          新增仓库
-        </Button>
-      </Space>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <h2 style={{ margin: 0 }}>仓库管理</h2>
+        <Space>
+          <Button icon={<ReloadOutlined />} onClick={handleRefresh} loading={refreshing}>刷新</Button>
+          <Button type="primary" onClick={() => { setEditingId(undefined); setSelectedWarehouse(null); setModalVisible(true); }}>
+            新增仓库
+          </Button>
+        </Space>
+      </div>
       <Table
         columns={columns}
         dataSource={data}
-        loading={loading}
+        loading={refreshing}
         rowKey="id"
         locale={{ emptyText: <Empty description="暂无数据" /> }}
         pagination={{
@@ -115,10 +115,7 @@ const WarehouseList: React.FC = () => {
       <Modal
         title={editingId ? '编辑仓库' : '新增仓库'}
         open={modalVisible}
-        onCancel={() => {
-          setModalVisible(false);
-          setSelectedWarehouse(null);
-        }}
+        onCancel={() => { setModalVisible(false); setSelectedWarehouse(null); }}
         footer={null}
         width={500}
         destroyOnClose
@@ -126,27 +123,15 @@ const WarehouseList: React.FC = () => {
         <WarehouseForm
           id={editingId}
           initialValues={selectedWarehouse || undefined}
-          onSuccess={() => {
-            setModalVisible(false);
-            setSelectedWarehouse(null);
-            fetchData();
-          }}
-          onCancel={() => {
-            setModalVisible(false);
-            setSelectedWarehouse(null);
-          }}
+          onSuccess={() => { setModalVisible(false); setSelectedWarehouse(null); fetchData(); }}
+          onCancel={() => { setModalVisible(false); setSelectedWarehouse(null); }}
         />
       </Modal>
       <Modal
         title="仓库详情"
         open={detailVisible}
-        onCancel={() => {
-          setDetailVisible(false);
-          setSelectedWarehouse(null);
-        }}
-        footer={
-          <Button onClick={() => setDetailVisible(false)}>关闭</Button>
-        }
+        onCancel={() => { setDetailVisible(false); setSelectedWarehouse(null); }}
+        footer={<Button onClick={() => setDetailVisible(false)}>关闭</Button>}
         width={500}
       >
         {selectedWarehouse && (
@@ -156,11 +141,7 @@ const WarehouseList: React.FC = () => {
             <p><strong>管理员：</strong>{selectedWarehouse.manager || '-'}</p>
             <p><strong>联系电话：</strong>{selectedWarehouse.phone || '-'}</p>
             <p><strong>容量：</strong>{selectedWarehouse.capacity || '-'}</p>
-            <p><strong>状态：</strong>
-              <Tag color={selectedWarehouse.isActive ? 'green' : 'red'}>
-                {selectedWarehouse.isActive ? '启用' : '禁用'}
-              </Tag>
-            </p>
+            <p><strong>状态：</strong>{isActiveTag(selectedWarehouse.isActive)}</p>
           </div>
         )}
       </Modal>

@@ -1,19 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import { Table, Button, Space, Tag, Modal, message, Empty } from 'antd';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Table, Button, Space, Modal, message, Empty } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
+import { ReloadOutlined } from '@ant-design/icons';
 import { customerService, type Customer } from '../../services';
 import CustomerForm from './CustomerForm';
+import { formatMoney, isActiveTag } from '../../constants';
 
 const CustomerList: React.FC = () => {
   const [data, setData] = useState<Customer[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [pagination, setPagination] = useState({ current: 1, pageSize: 10, total: 0 });
   const [modalVisible, setModalVisible] = useState(false);
   const [editingId, setEditingId] = useState<string | undefined>();
   const [detailVisible, setDetailVisible] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
 
-  const fetchData = async (page = 1, pageSize = 10) => {
+  const fetchData = useCallback(async (page = 1, pageSize = 10) => {
     setLoading(true);
     try {
       const result = await customerService.getCustomers({ page, pageSize });
@@ -24,11 +27,17 @@ const CustomerList: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    fetchData();
+    setTimeout(() => setRefreshing(false), 500);
+  };
 
   const handleEdit = (record: Customer) => {
     setSelectedCustomer(record);
@@ -63,14 +72,8 @@ const CustomerList: React.FC = () => {
     { title: '电话', dataIndex: 'phone', key: 'phone' },
     { title: '邮箱', dataIndex: 'email', key: 'email' },
     { title: '地址', dataIndex: 'address', key: 'address', ellipsis: true },
-    { title: '累计金额', dataIndex: 'totalAmount', key: 'totalAmount',
-      render: (v) => `¥${Number(v || 0).toFixed(2)}` },
-    {
-      title: '状态',
-      dataIndex: 'isActive',
-      key: 'isActive',
-      render: (v) => <Tag color={v ? 'green' : 'red'}>{v ? '启用' : '禁用'}</Tag>,
-    },
+    { title: '累计金额', dataIndex: 'totalAmount', key: 'totalAmount', render: formatMoney },
+    { title: '状态', dataIndex: 'isActive', key: 'isActive', render: isActiveTag },
     {
       title: '操作',
       key: 'action',
@@ -87,23 +90,19 @@ const CustomerList: React.FC = () => {
 
   return (
     <div>
-      <h2>客户管理</h2>
-      <Space style={{ marginBottom: 16 }}>
-        <Button
-          type="primary"
-          onClick={() => {
-            setEditingId(undefined);
-            setSelectedCustomer(null);
-            setModalVisible(true);
-          }}
-        >
-          新增客户
-        </Button>
-      </Space>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <h2 style={{ margin: 0 }}>客户管理</h2>
+        <Space>
+          <Button icon={<ReloadOutlined />} onClick={handleRefresh} loading={refreshing}>刷新</Button>
+          <Button type="primary" onClick={() => { setEditingId(undefined); setSelectedCustomer(null); setModalVisible(true); }}>
+            新增客户
+          </Button>
+        </Space>
+      </div>
       <Table
         columns={columns}
         dataSource={data}
-        loading={loading}
+        loading={refreshing}
         rowKey="id"
         locale={{ emptyText: <Empty description="暂无数据" /> }}
         pagination={{
@@ -117,10 +116,7 @@ const CustomerList: React.FC = () => {
       <Modal
         title={editingId ? '编辑客户' : '新增客户'}
         open={modalVisible}
-        onCancel={() => {
-          setModalVisible(false);
-          setSelectedCustomer(null);
-        }}
+        onCancel={() => { setModalVisible(false); setSelectedCustomer(null); }}
         footer={null}
         width={500}
         destroyOnClose
@@ -128,27 +124,15 @@ const CustomerList: React.FC = () => {
         <CustomerForm
           id={editingId}
           initialValues={selectedCustomer || undefined}
-          onSuccess={() => {
-            setModalVisible(false);
-            setSelectedCustomer(null);
-            fetchData();
-          }}
-          onCancel={() => {
-            setModalVisible(false);
-            setSelectedCustomer(null);
-          }}
+          onSuccess={() => { setModalVisible(false); setSelectedCustomer(null); fetchData(); }}
+          onCancel={() => { setModalVisible(false); setSelectedCustomer(null); }}
         />
       </Modal>
       <Modal
         title="客户详情"
         open={detailVisible}
-        onCancel={() => {
-          setDetailVisible(false);
-          setSelectedCustomer(null);
-        }}
-        footer={
-          <Button onClick={() => setDetailVisible(false)}>关闭</Button>
-        }
+        onCancel={() => { setDetailVisible(false); setSelectedCustomer(null); }}
+        footer={<Button onClick={() => setDetailVisible(false)}>关闭</Button>}
         width={500}
       >
         {selectedCustomer && (
@@ -158,12 +142,8 @@ const CustomerList: React.FC = () => {
             <p><strong>电话：</strong>{selectedCustomer.phone || '-'}</p>
             <p><strong>邮箱：</strong>{selectedCustomer.email || '-'}</p>
             <p><strong>地址：</strong>{selectedCustomer.address || '-'}</p>
-            <p><strong>累计金额：</strong>¥{Number(selectedCustomer.totalAmount || 0).toFixed(2)}</p>
-            <p><strong>状态：</strong>
-              <Tag color={selectedCustomer.isActive ? 'green' : 'red'}>
-                {selectedCustomer.isActive ? '启用' : '禁用'}
-              </Tag>
-            </p>
+            <p><strong>累计金额：</strong>{formatMoney(selectedCustomer.totalAmount)}</p>
+            <p><strong>状态：</strong>{isActiveTag(selectedCustomer.isActive)}</p>
           </div>
         )}
       </Modal>

@@ -1,19 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import { Table, Button, Space, Tag, Modal, message, Empty } from 'antd';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Table, Button, Space, Modal, message, Empty } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
+import { ReloadOutlined } from '@ant-design/icons';
 import { supplierService, type Supplier } from '../../services';
 import SupplierForm from './SupplierForm';
+import { formatMoney, isActiveTag } from '../../constants';
 
 const SupplierList: React.FC = () => {
   const [data, setData] = useState<Supplier[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [pagination, setPagination] = useState({ current: 1, pageSize: 10, total: 0 });
   const [modalVisible, setModalVisible] = useState(false);
   const [editingId, setEditingId] = useState<string | undefined>();
   const [detailVisible, setDetailVisible] = useState(false);
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
 
-  const fetchData = async (page = 1, pageSize = 10) => {
+  const fetchData = useCallback(async (page = 1, pageSize = 10) => {
     setLoading(true);
     try {
       const result = await supplierService.getSuppliers({ page, pageSize });
@@ -24,11 +27,17 @@ const SupplierList: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    fetchData();
+    setTimeout(() => setRefreshing(false), 500);
+  };
 
   const handleEdit = (record: Supplier) => {
     setSelectedSupplier(record);
@@ -63,14 +72,8 @@ const SupplierList: React.FC = () => {
     { title: '电话', dataIndex: 'phone', key: 'phone' },
     { title: '邮箱', dataIndex: 'email', key: 'email' },
     { title: '地址', dataIndex: 'address', key: 'address', ellipsis: true },
-    { title: '累计金额', dataIndex: 'totalAmount', key: 'totalAmount',
-      render: (v) => `¥${Number(v || 0).toFixed(2)}` },
-    {
-      title: '状态',
-      dataIndex: 'isActive',
-      key: 'isActive',
-      render: (v) => <Tag color={v ? 'green' : 'red'}>{v ? '启用' : '禁用'}</Tag>,
-    },
+    { title: '累计金额', dataIndex: 'totalAmount', key: 'totalAmount', render: formatMoney },
+    { title: '状态', dataIndex: 'isActive', key: 'isActive', render: isActiveTag },
     {
       title: '操作',
       key: 'action',
@@ -87,23 +90,19 @@ const SupplierList: React.FC = () => {
 
   return (
     <div>
-      <h2>供应商管理</h2>
-      <Space style={{ marginBottom: 16 }}>
-        <Button
-          type="primary"
-          onClick={() => {
-            setEditingId(undefined);
-            setSelectedSupplier(null);
-            setModalVisible(true);
-          }}
-        >
-          新增供应商
-        </Button>
-      </Space>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <h2 style={{ margin: 0 }}>供应商管理</h2>
+        <Space>
+          <Button icon={<ReloadOutlined />} onClick={handleRefresh} loading={refreshing}>刷新</Button>
+          <Button type="primary" onClick={() => { setEditingId(undefined); setSelectedSupplier(null); setModalVisible(true); }}>
+            新增供应商
+          </Button>
+        </Space>
+      </div>
       <Table
         columns={columns}
         dataSource={data}
-        loading={loading}
+        loading={refreshing}
         rowKey="id"
         locale={{ emptyText: <Empty description="暂无数据" /> }}
         pagination={{
@@ -117,10 +116,7 @@ const SupplierList: React.FC = () => {
       <Modal
         title={editingId ? '编辑供应商' : '新增供应商'}
         open={modalVisible}
-        onCancel={() => {
-          setModalVisible(false);
-          setSelectedSupplier(null);
-        }}
+        onCancel={() => { setModalVisible(false); setSelectedSupplier(null); }}
         footer={null}
         width={500}
         destroyOnClose
@@ -128,27 +124,15 @@ const SupplierList: React.FC = () => {
         <SupplierForm
           id={editingId}
           initialValues={selectedSupplier || undefined}
-          onSuccess={() => {
-            setModalVisible(false);
-            setSelectedSupplier(null);
-            fetchData();
-          }}
-          onCancel={() => {
-            setModalVisible(false);
-            setSelectedSupplier(null);
-          }}
+          onSuccess={() => { setModalVisible(false); setSelectedSupplier(null); fetchData(); }}
+          onCancel={() => { setModalVisible(false); setSelectedSupplier(null); }}
         />
       </Modal>
       <Modal
         title="供应商详情"
         open={detailVisible}
-        onCancel={() => {
-          setDetailVisible(false);
-          setSelectedSupplier(null);
-        }}
-        footer={
-          <Button onClick={() => setDetailVisible(false)}>关闭</Button>
-        }
+        onCancel={() => { setDetailVisible(false); setSelectedSupplier(null); }}
+        footer={<Button onClick={() => setDetailVisible(false)}>关闭</Button>}
         width={500}
       >
         {selectedSupplier && (
@@ -158,12 +142,8 @@ const SupplierList: React.FC = () => {
             <p><strong>电话：</strong>{selectedSupplier.phone || '-'}</p>
             <p><strong>邮箱：</strong>{selectedSupplier.email || '-'}</p>
             <p><strong>地址：</strong>{selectedSupplier.address || '-'}</p>
-            <p><strong>累计金额：</strong>¥{Number(selectedSupplier.totalAmount || 0).toFixed(2)}</p>
-            <p><strong>状态：</strong>
-              <Tag color={selectedSupplier.isActive ? 'green' : 'red'}>
-                {selectedSupplier.isActive ? '启用' : '禁用'}
-              </Tag>
-            </p>
+            <p><strong>累计金额：</strong>{formatMoney(selectedSupplier.totalAmount)}</p>
+            <p><strong>状态：</strong>{isActiveTag(selectedSupplier.isActive)}</p>
           </div>
         )}
       </Modal>

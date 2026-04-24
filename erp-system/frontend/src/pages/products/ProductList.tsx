@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { Table, Button, Space, message, Tag, Modal, Image } from 'antd';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Table, Button, Space, message, Modal, Image } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
+import { ReloadOutlined } from '@ant-design/icons';
 import { productService } from '../../services';
 import ProductForm from './ProductForm';
 import type { PageResult } from '../../types';
+import { formatMoney, isActiveTag } from '../../constants';
 
 interface Product {
   id: string;
@@ -24,14 +26,16 @@ interface Product {
 
 const ProductList: React.FC = () => {
   const [data, setData] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [pagination, setPagination] = useState({ current: 1, pageSize: 10, total: 0 });
   const [modalVisible, setModalVisible] = useState(false);
   const [editingId, setEditingId] = useState<string | undefined>();
   const [detailVisible, setDetailVisible] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
-  const fetchData = async (page = 1, pageSize = 10) => {
+  const [, setLoading] = useState(false);
+
+  const fetchData = useCallback(async (page = 1, pageSize = 10) => {
     setLoading(true);
     try {
       const result: PageResult<Product> = await productService.getProducts({ page, pageSize });
@@ -42,11 +46,17 @@ const ProductList: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    fetchData();
+    setTimeout(() => setRefreshing(false), 500);
+  };
 
   const handleEdit = (record: Product) => {
     setEditingId(record.id);
@@ -82,20 +92,11 @@ const ProductList: React.FC = () => {
     { title: '分类', dataIndex: ['category', 'name'], key: 'category' },
     { title: '供应商', dataIndex: ['supplier', 'name'], key: 'supplier' },
     { title: '单位', dataIndex: 'unit', key: 'unit', width: 60 },
-    { title: '成本价', dataIndex: 'costPrice', key: 'costPrice', width: 90,
-      render: (v) => `¥${Number(v || 0).toFixed(2)}` },
-    { title: '销售价', dataIndex: 'salePrice', key: 'salePrice', width: 90,
-      render: (v) => `¥${Number(v || 0).toFixed(2)}` },
+    { title: '成本价', dataIndex: 'costPrice', key: 'costPrice', width: 90, render: formatMoney },
+    { title: '销售价', dataIndex: 'salePrice', key: 'salePrice', width: 90, render: formatMoney },
     { title: '库存', dataIndex: 'stock', key: 'stock', width: 70 },
-    { title: '销量', dataIndex: 'salesCount', key: 'salesCount', width: 70,
-      render: (v) => v || 0 },
-    {
-      title: '状态',
-      dataIndex: 'isActive',
-      key: 'isActive',
-      width: 70,
-      render: (v) => <Tag color={v ? 'green' : 'red'}>{v ? '启用' : '禁用'}</Tag>,
-    },
+    { title: '销量', dataIndex: 'salesCount', key: 'salesCount', width: 70, render: (v) => v || 0 },
+    { title: '状态', dataIndex: 'isActive', key: 'isActive', width: 70, render: isActiveTag },
     {
       title: '操作',
       key: 'action',
@@ -112,22 +113,19 @@ const ProductList: React.FC = () => {
 
   return (
     <div>
-      <h2>商品管理</h2>
-      <Space style={{ marginBottom: 16 }}>
-        <Button
-          type="primary"
-          onClick={() => {
-            setEditingId(undefined);
-            setModalVisible(true);
-          }}
-        >
-          新增商品
-        </Button>
-      </Space>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <h2 style={{ margin: 0 }}>商品管理</h2>
+        <Space>
+          <Button icon={<ReloadOutlined />} onClick={handleRefresh} loading={refreshing}>刷新</Button>
+          <Button type="primary" onClick={() => { setEditingId(undefined); setModalVisible(true); }}>
+            新增商品
+          </Button>
+        </Space>
+      </div>
       <Table
         columns={columns}
         dataSource={data}
-        loading={loading}
+        loading={refreshing}
         rowKey="id"
         pagination={{
           ...pagination,
@@ -185,14 +183,10 @@ const ProductList: React.FC = () => {
                 <p><strong>分类：</strong>{selectedProduct.category?.name || '-'}</p>
                 <p><strong>供应商：</strong>{selectedProduct.supplier?.name || '-'}</p>
                 <p><strong>单位：</strong>{selectedProduct.unit}</p>
-                <p><strong>成本价：</strong>¥{Number(selectedProduct.costPrice || 0).toFixed(2)}</p>
-                <p><strong>销售价：</strong>¥{Number(selectedProduct.salePrice || 0).toFixed(2)}</p>
+                <p><strong>成本价：</strong>{formatMoney(selectedProduct.costPrice)}</p>
+                <p><strong>销售价：</strong>{formatMoney(selectedProduct.salePrice)}</p>
                 <p><strong>当前库存：</strong>{selectedProduct.stock}</p>
-                <p><strong>状态：</strong>
-                  <Tag color={selectedProduct.isActive ? 'green' : 'red'}>
-                    {selectedProduct.isActive ? '启用' : '禁用'}
-                  </Tag>
-                </p>
+                <p><strong>状态：</strong>{isActiveTag(selectedProduct.isActive)}</p>
               </div>
             </div>
             {selectedProduct.description && (
