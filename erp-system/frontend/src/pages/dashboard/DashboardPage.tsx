@@ -5,11 +5,15 @@ import {
   ShoppingCartOutlined,
   RiseOutlined,
   FallOutlined,
+  InboxOutlined,
+  ShoppingOutlined,
 } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import ReactECharts from 'echarts-for-react';
 import { analyticsService } from '../../services';
 
 const DashboardPage: React.FC = () => {
+  const navigate = useNavigate();
   const [stats, setStats] = useState({
     totalProducts: 0,
     lowStockProducts: 0,
@@ -90,7 +94,7 @@ const DashboardPage: React.FC = () => {
       <h1 style={{ fontSize: 24, marginBottom: 24 }}>仪表盘</h1>
       <Row gutter={16}>
         <Col span={6}>
-          <Card loading={loading}>
+          <Card loading={loading} hoverable onClick={() => navigate('/sales')} style={{ cursor: 'pointer' }}>
             <Statistic
               title="本月销售额"
               value={stats.monthlySales}
@@ -102,7 +106,7 @@ const DashboardPage: React.FC = () => {
           </Card>
         </Col>
         <Col span={6}>
-          <Card loading={loading}>
+          <Card loading={loading} hoverable onClick={() => navigate('/purchases')} style={{ cursor: 'pointer' }}>
             <Statistic
               title="本月采购额"
               value={stats.monthlyPurchases}
@@ -139,19 +143,19 @@ const DashboardPage: React.FC = () => {
       </Row>
       <Row gutter={16} style={{ marginTop: 24 }}>
         <Col span={8}>
-          <Card loading={loading} title="待处理业务">
+          <Card loading={loading} title="待处理业务" hoverable onClick={() => navigate('/purchases')} style={{ cursor: 'pointer' }}>
             <Statistic title="待审批采购单" value={stats.pendingPurchases} />
             <Statistic title="待审批销售单" value={stats.pendingSales} />
           </Card>
         </Col>
         <Col span={8}>
-          <Card loading={loading} title="库存预警">
+          <Card loading={loading} title="库存预警" hoverable onClick={() => navigate('/inventory')} style={{ cursor: 'pointer' }}>
             <Statistic title="商品总数" value={stats.totalProducts} />
             <Statistic title="低库存商品" value={stats.lowStockProducts} valueStyle={{ color: '#faad14' }} />
           </Card>
         </Col>
         <Col span={8}>
-          <Card loading={loading} title="年度汇总">
+          <Card loading={loading} title="年度汇总" hoverable onClick={() => navigate('/sales')} style={{ cursor: 'pointer' }}>
             <Statistic title="年度销售额" value={stats.yearlySales} precision={2} suffix="元" />
             <Statistic title="年度采购额" value={stats.yearlyPurchases} precision={2} suffix="元" />
           </Card>

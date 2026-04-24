@@ -36,6 +36,10 @@ const SupplierList: React.FC = () => {
     fetchData();
   }, []);
 
+  const handleCreate = () => {
+    message.info('新增供应商功能开发中');
+  };
+
   const columns: ColumnsType<Supplier> = [
     { title: '供应商名称', dataIndex: 'name', key: 'name' },
     { title: '联系人', dataIndex: 'contactPerson', key: 'contactPerson' },
@@ -56,7 +60,7 @@ const SupplierList: React.FC = () => {
     <div>
       <h2>供应商管理</h2>
       <Space style={{ marginBottom: 16 }}>
-        <Button type="primary">新增供应商</Button>
+        <Button type="primary" onClick={handleCreate}>新增供应商</Button>
       </Space>
       <Table
         columns={columns}

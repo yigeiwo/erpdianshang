@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Table, Button, Space, Tag } from 'antd';
+import { Table, Button, Space, Tag, Modal, message } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 
 interface PurchaseOrder {
@@ -27,6 +27,46 @@ const PurchaseList: React.FC = () => {
   const [data] = useState<PurchaseOrder[]>([]);
   const [loading] = useState(false);
 
+  const handleView = (record: PurchaseOrder) => {
+    Modal.info({
+      title: '采购单详情',
+      content: (
+        <div>
+          <p>单据编号：{record.orderNo}</p>
+          <p>供应商：{record.supplier?.name}</p>
+          <p>仓库：{record.warehouse?.name}</p>
+          <p>订单日期：{record.orderDate}</p>
+          <p>订单金额：¥{record.totalAmount?.toFixed(2) || '0.00'}</p>
+          <p>最终金额：¥{record.finalAmount?.toFixed(2) || '0.00'}</p>
+        </div>
+      ),
+    });
+  };
+
+  const handleApprove = (record: PurchaseOrder) => {
+    Modal.confirm({
+      title: '审批确认',
+      content: `确认审批采购单 ${record.orderNo}？`,
+      onOk: () => {
+        message.success('审批成功');
+      },
+    });
+  };
+
+  const handleInbound = (record: PurchaseOrder) => {
+    Modal.confirm({
+      title: '入库确认',
+      content: `确认将采购单 ${record.orderNo} 入库？`,
+      onOk: () => {
+        message.success('入库成功');
+      },
+    });
+  };
+
+  const handleCreate = () => {
+    message.info('新建采购单功能开发中');
+  };
+
   const columns: ColumnsType<PurchaseOrder> = [
     { title: '单据编号', dataIndex: 'orderNo', key: 'orderNo' },
     { title: '供应商', dataIndex: ['supplier', 'name'], key: 'supplier' },
@@ -50,9 +90,9 @@ const PurchaseList: React.FC = () => {
       key: 'action',
       render: (_, record) => (
         <Space>
-          <Button type="link" size="small">查看</Button>
-          {record.status === 'pending' && <Button type="link" size="small">审批</Button>}
-          {record.status === 'approved' && <Button type="link" size="small">入库</Button>}
+          <Button type="link" size="small" onClick={() => handleView(record)}>查看</Button>
+          {record.status === 'pending' && <Button type="link" size="small" onClick={() => handleApprove(record)}>审批</Button>}
+          {record.status === 'approved' && <Button type="link" size="small" onClick={() => handleInbound(record)}>入库</Button>}
         </Space>
       ),
     },
@@ -62,7 +102,7 @@ const PurchaseList: React.FC = () => {
     <div>
       <h2>采购管理</h2>
       <Space style={{ marginBottom: 16 }}>
-        <Button type="primary">新建采购单</Button>
+        <Button type="primary" onClick={handleCreate}>新建采购单</Button>
       </Space>
       <Table
         columns={columns}

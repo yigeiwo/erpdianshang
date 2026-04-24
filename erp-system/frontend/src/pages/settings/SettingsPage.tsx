@@ -1,13 +1,29 @@
 import React from 'react';
-import { Card, Tabs, Table, Button, Space, Tag } from 'antd';
+import { Card, Tabs, Table, Button, Space, Tag, message } from 'antd';
 
 const SettingsPage: React.FC = () => {
+  const handleEditRole = () => {
+    message.info('编辑角色功能开发中');
+  };
+
+  const handleEditUser = () => {
+    message.info('编辑用户功能开发中');
+  };
+
+  const handleCreateRole = () => {
+    message.info('新增角色功能开发中');
+  };
+
+  const handleCreateUser = () => {
+    message.info('新增用户功能开发中');
+  };
+
   const roleColumns = [
     { title: '角色名称', dataIndex: 'name', key: 'name' },
     { title: '描述', dataIndex: 'description', key: 'description' },
     { title: '状态', dataIndex: 'isActive', key: 'isActive',
       render: (v: boolean) => <Tag color={v ? 'green' : 'red'}>{v ? '启用' : '禁用'}</Tag> },
-    { title: '操作', key: 'action', render: () => <Button type="link" size="small">编辑</Button> },
+    { title: '操作', key: 'action', render: () => <Button type="link" size="small" onClick={handleEditRole}>编辑</Button> },
   ];
 
   const userColumns = [
@@ -16,7 +32,7 @@ const SettingsPage: React.FC = () => {
     { title: '真实姓名', dataIndex: 'realName', key: 'realName' },
     { title: '状态', dataIndex: 'isActive', key: 'isActive',
       render: (v: boolean) => <Tag color={v ? 'green' : 'red'}>{v ? '启用' : '禁用'}</Tag> },
-    { title: '操作', key: 'action', render: () => <Button type="link" size="small">编辑</Button> },
+    { title: '操作', key: 'action', render: () => <Button type="link" size="small" onClick={handleEditUser}>编辑</Button> },
   ];
 
   const tabItems = [
@@ -26,7 +42,7 @@ const SettingsPage: React.FC = () => {
       children: (
         <div>
           <Space style={{ marginBottom: 16 }}>
-            <Button type="primary">新增角色</Button>
+            <Button type="primary" onClick={handleCreateRole}>新增角色</Button>
           </Space>
           <Table columns={roleColumns} dataSource={[]} rowKey="id" />
         </div>
@@ -38,7 +54,7 @@ const SettingsPage: React.FC = () => {
       children: (
         <div>
           <Space style={{ marginBottom: 16 }}>
-            <Button type="primary">新增用户</Button>
+            <Button type="primary" onClick={handleCreateUser}>新增用户</Button>
           </Space>
           <Table columns={userColumns} dataSource={[]} rowKey="id" />
         </div>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Row, Col, Card, Statistic, Table, Button } from 'antd';
+import { Row, Col, Card, Statistic, Table, Button, message } from 'antd';
 import {
   DollarOutlined,
   ArrowUpOutlined,
@@ -8,6 +8,10 @@ import {
 } from '@ant-design/icons';
 
 const FinancePage: React.FC = () => {
+  const handleViewMore = (type: string) => {
+    message.info(`${type}记录开发中`);
+  };
+
   return (
     <div>
       <h2>财务管理</h2>
@@ -64,7 +68,7 @@ const FinancePage: React.FC = () => {
 
       <Row gutter={16}>
         <Col span={12}>
-          <Card title="收款记录" extra={<Button type="link">查看更多</Button>}>
+          <Card title="收款记录" extra={<Button type="link" onClick={() => handleViewMore('收款')}>查看更多</Button>}>
             <Table
               dataSource={[]}
               columns={[
@@ -80,7 +84,7 @@ const FinancePage: React.FC = () => {
           </Card>
         </Col>
         <Col span={12}>
-          <Card title="付款记录" extra={<Button type="link">查看更多</Button>}>
+          <Card title="付款记录" extra={<Button type="link" onClick={() => handleViewMore('付款')}>查看更多</Button>}>
             <Table
               dataSource={[]}
               columns={[

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Table, Button, Space, Tag } from 'antd';
+import { Table, Button, Space, Tag, message } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 
 interface Warehouse {
@@ -15,6 +15,10 @@ interface Warehouse {
 const WarehouseList: React.FC = () => {
   const [data] = useState<Warehouse[]>([]);
   const [loading] = useState(false);
+
+  const handleCreate = () => {
+    message.info('新增仓库功能开发中');
+  };
 
   const columns: ColumnsType<Warehouse> = [
     { title: '仓库名称', dataIndex: 'name', key: 'name' },
@@ -34,7 +38,7 @@ const WarehouseList: React.FC = () => {
     <div>
       <h2>仓库管理</h2>
       <Space style={{ marginBottom: 16 }}>
-        <Button type="primary">新增仓库</Button>
+        <Button type="primary" onClick={handleCreate}>新增仓库</Button>
       </Space>
       <Table
         columns={columns}

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Table, Button, Space } from 'antd';
+import { Table, Button, Space, message } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 
 interface Inventory {
@@ -15,6 +15,14 @@ const InventoryList: React.FC = () => {
   const [data] = useState<Inventory[]>([]);
   const [loading] = useState(false);
 
+  const handleCheck = () => {
+    message.info('库存盘点功能开发中');
+  };
+
+  const handleWarning = () => {
+    message.info('库存预警设置功能开发中');
+  };
+
   const columns: ColumnsType<Inventory> = [
     { title: '商品编码', dataIndex: ['product', 'productCode'], key: 'productCode' },
     { title: '商品名称', dataIndex: ['product', 'name'], key: 'productName' },
@@ -28,8 +36,8 @@ const InventoryList: React.FC = () => {
     <div>
       <h2>库存管理</h2>
       <Space style={{ marginBottom: 16 }}>
-        <Button type="primary">库存盘点</Button>
-        <Button>库存预警设置</Button>
+        <Button type="primary" onClick={handleCheck}>库存盘点</Button>
+        <Button onClick={handleWarning}>库存预警设置</Button>
       </Space>
       <Table
         columns={columns}

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Table, Button, Space, Tag } from 'antd';
+import { Table, Button, Space, Tag, message } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 
 interface Customer {
@@ -16,6 +16,10 @@ interface Customer {
 const CustomerList: React.FC = () => {
   const [data] = useState<Customer[]>([]);
   const [loading] = useState(false);
+
+  const handleCreate = () => {
+    message.info('新增客户功能开发中');
+  };
 
   const columns: ColumnsType<Customer> = [
     { title: '客户名称', dataIndex: 'name', key: 'name' },
@@ -37,7 +41,7 @@ const CustomerList: React.FC = () => {
     <div>
       <h2>客户管理</h2>
       <Space style={{ marginBottom: 16 }}>
-        <Button type="primary">新增客户</Button>
+        <Button type="primary" onClick={handleCreate}>新增客户</Button>
       </Space>
       <Table
         columns={columns}
