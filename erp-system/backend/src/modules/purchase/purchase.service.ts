@@ -156,10 +156,10 @@ export class PurchaseService {
         const beforeQty = await this.getProductStock(item.productId, item.warehouseId);
 
         await queryRunner.manager.query(
-          `INSERT INTO inventory (id, "productId", "warehouseId", quantity, "availableQuantity", "lockedQuantity", "created_at", "updated_at")
+          `INSERT INTO inventory (id, product_id, warehouse_id, quantity, available_quantity, locked_quantity, created_at, updated_at)
            VALUES (uuid_generate_v4(), $1, $2, $3, $3, 0, NOW(), NOW())
-           ON CONFLICT ("productId", "warehouseId")
-           DO UPDATE SET quantity = inventory.quantity + $3, "availableQuantity" = inventory."availableQuantity" + $3, "updated_at" = NOW()`,
+           ON CONFLICT (product_id, warehouse_id)
+           DO UPDATE SET quantity = inventory.quantity + $3, available_quantity = inventory.available_quantity + $3, updated_at = NOW()`,
           [item.productId, item.warehouseId, item.quantity]
         );
 
@@ -197,7 +197,7 @@ export class PurchaseService {
 
   private async getProductStock(productId: string, warehouseId: string): Promise<number> {
     const result = await this.dataSource.query(
-      `SELECT quantity FROM inventory WHERE "productId" = $1 AND "warehouseId" = $2`,
+      `SELECT quantity FROM inventory WHERE product_id = $1 AND warehouse_id = $2`,
       [productId, warehouseId]
     );
     return result.length > 0 ? parseFloat(result[0].quantity) : 0;

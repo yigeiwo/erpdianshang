@@ -147,7 +147,7 @@ export class SaleService {
     try {
       for (const item of order.items) {
         const result = await queryRunner.manager.query(
-          `SELECT "availableQuantity" FROM inventory WHERE "productId" = $1 AND "warehouseId" = $2`,
+          `SELECT available_quantity FROM inventory WHERE product_id = $1 AND warehouse_id = $2`,
           [item.productId, order.warehouseId]
         );
 
@@ -185,8 +185,8 @@ export class SaleService {
         const beforeQty = await this.getProductStock(item.productId, order.warehouseId);
 
         await queryRunner.manager.query(
-          `UPDATE inventory SET quantity = quantity - $1, "availableQuantity" = "availableQuantity" - $1, "updated_at" = NOW()
-           WHERE "productId" = $2 AND "warehouseId" = $3`,
+          `UPDATE inventory SET quantity = quantity - $1, available_quantity = available_quantity - $1, updated_at = NOW()
+           WHERE product_id = $2 AND warehouse_id = $3`,
           [item.quantity, item.productId, order.warehouseId]
         );
 
@@ -223,7 +223,7 @@ export class SaleService {
 
   private async getProductStock(productId: string, warehouseId: string): Promise<number> {
     const result = await this.dataSource.query(
-      `SELECT quantity FROM inventory WHERE "productId" = $1 AND "warehouseId" = $2`,
+      `SELECT quantity FROM inventory WHERE product_id = $1 AND warehouse_id = $2`,
       [productId, warehouseId]
     );
     return result.length > 0 ? parseFloat(result[0].quantity) : 0;
