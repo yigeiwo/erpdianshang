@@ -115,7 +115,19 @@ export class PurchaseService {
 
   async update(id: string, dto: UpdatePurchaseOrderDto): Promise<PurchaseOrder> {
     const order = await this.findOne(id);
+    if (order.status !== PurchaseOrderStatus.DRAFT) {
+      throw new Error('Only draft orders can be updated');
+    }
     Object.assign(order, dto);
+    return this.purchaseRepository.save(order);
+  }
+
+  async submit(id: string): Promise<PurchaseOrder> {
+    const order = await this.findOne(id);
+    if (order.status !== PurchaseOrderStatus.DRAFT) {
+      throw new Error('Only draft orders can be submitted');
+    }
+    order.status = PurchaseOrderStatus.PENDING;
     return this.purchaseRepository.save(order);
   }
 

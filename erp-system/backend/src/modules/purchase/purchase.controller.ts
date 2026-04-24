@@ -29,6 +29,11 @@ export class PurchaseController {
     return this.purchaseService.update(id, dto);
   }
 
+  @Post(':id/submit')
+  submit(@Param('id') id: string) {
+    return this.purchaseService.submit(id);
+  }
+
   @Post(':id/approve')
   approve(@Param('id') id: string, @CurrentUser('id') userId: string, @Body() dto: ApprovePurchaseOrderDto) {
     return this.purchaseService.approve(id, userId);

@@ -118,7 +118,19 @@ export class SaleService {
 
   async update(id: string, dto: UpdateSaleOrderDto): Promise<SaleOrder> {
     const order = await this.findOne(id);
+    if (order.status !== SaleOrderStatus.DRAFT) {
+      throw new Error('Only draft orders can be updated');
+    }
     Object.assign(order, dto);
+    return this.saleRepository.save(order);
+  }
+
+  async submit(id: string): Promise<SaleOrder> {
+    const order = await this.findOne(id);
+    if (order.status !== SaleOrderStatus.DRAFT) {
+      throw new Error('Only draft orders can be submitted');
+    }
+    order.status = SaleOrderStatus.PENDING;
     return this.saleRepository.save(order);
   }
 

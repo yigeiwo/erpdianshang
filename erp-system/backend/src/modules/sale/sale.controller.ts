@@ -29,6 +29,11 @@ export class SaleController {
     return this.saleService.update(id, dto);
   }
 
+  @Post(':id/submit')
+  submit(@Param('id') id: string) {
+    return this.saleService.submit(id);
+  }
+
   @Post(':id/approve')
   approve(@Param('id') id: string, @CurrentUser('id') userId: string) {
     return this.saleService.approve(id, userId);
