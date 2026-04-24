@@ -19,6 +19,7 @@ interface Product {
   isActive: boolean;
   imageUrl?: string;
   description?: string;
+  salesCount?: number;
 }
 
 const ProductList: React.FC = () => {
@@ -86,6 +87,8 @@ const ProductList: React.FC = () => {
     { title: '销售价', dataIndex: 'salePrice', key: 'salePrice', width: 90,
       render: (v) => `¥${Number(v || 0).toFixed(2)}` },
     { title: '库存', dataIndex: 'stock', key: 'stock', width: 70 },
+    { title: '销量', dataIndex: 'salesCount', key: 'salesCount', width: 70,
+      render: (v) => v || 0 },
     {
       title: '状态',
       dataIndex: 'isActive',

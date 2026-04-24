@@ -3,12 +3,16 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Product } from './entities/product.entity';
 import { CreateProductDto, UpdateProductDto, QueryProductDto } from './dto/product.dto';
+import { SaleItem } from '../sale/entities/sale-item.entity';
+import { SaleOrder } from '../sale/entities/sale-order.entity';
 
 @Injectable()
 export class ProductService {
   constructor(
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
+    @InjectRepository(SaleItem)
+    private readonly saleItemRepository: Repository<SaleItem>,
   ) {}
 
   async create(dto: CreateProductDto): Promise<Product> {
@@ -33,6 +37,13 @@ export class ProductService {
 
     queryBuilder.leftJoinAndSelect('p.category', 'category');
     queryBuilder.leftJoinAndSelect('p.supplier', 'supplier');
+
+    queryBuilder.loadRelationCountAndMap(
+      'p.salesCount',
+      'p.saleItems',
+      'saleItem',
+      (qb) => qb.andWhere('saleItem.saleOrder.status = :status', { status: 'completed' })
+    );
 
     const [list, total] = await queryBuilder
       .skip((page - 1) * pageSize)

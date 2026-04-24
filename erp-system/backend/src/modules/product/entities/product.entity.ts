@@ -9,6 +9,7 @@ import {
   JoinColumn,
   OneToMany,
 } from 'typeorm';
+import { SaleItem } from '../../sale/entities/sale-item.entity';
 import { Category } from './category.entity';
 import { Supplier } from '../../supplier/entities/supplier.entity';
 
@@ -75,4 +76,7 @@ export class Product {
 
   @DeleteDateColumn({ name: 'deleted_at' })
   deletedAt: Date;
+
+  @OneToMany(() => SaleItem, (saleItem) => saleItem.product)
+  saleItems: SaleItem[];
 }

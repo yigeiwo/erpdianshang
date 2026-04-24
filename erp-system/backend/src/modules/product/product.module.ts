@@ -5,9 +5,10 @@ import { Category } from './entities/category.entity';
 import { ProductService } from './product.service';
 import { ProductController } from './product.controller';
 import { SupplierModule } from '../supplier/supplier.module';
+import { SaleItem } from '../sale/entities/sale-item.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Product, Category]), SupplierModule],
+  imports: [TypeOrmModule.forFeature([Product, Category, SaleItem]), SupplierModule],
   controllers: [ProductController],
   providers: [ProductService],
   exports: [ProductService],
