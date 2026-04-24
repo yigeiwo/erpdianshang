@@ -1,17 +1,8 @@
-import React, { useState } from 'react';
-import { Table, Button, Space, Tag, Modal, message } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Table, Button, Space, Tag, Modal, message, Empty, Select } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-
-interface SaleOrder {
-  id: string;
-  orderNo: string;
-  customer: { name: string };
-  warehouse: { name: string };
-  totalAmount: number;
-  finalAmount: number;
-  status: string;
-  orderDate: string;
-}
+import { saleService, type SaleOrder } from '../../services';
+import SaleForm from './SaleForm';
 
 const statusMap: Record<string, { color: string; text: string }> = {
   draft: { color: 'default', text: '草稿' },
@@ -24,62 +15,86 @@ const statusMap: Record<string, { color: string; text: string }> = {
 };
 
 const SaleList: React.FC = () => {
-  const [data] = useState<SaleOrder[]>([]);
-  const [loading] = useState(false);
+  const [data, setData] = useState<SaleOrder[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [pagination, setPagination] = useState({ current: 1, pageSize: 10, total: 0 });
+  const [modalVisible, setModalVisible] = useState(false);
+  const [detailVisible, setDetailVisible] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<SaleOrder | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string | undefined>();
 
-  const handleView = (record: SaleOrder) => {
-    Modal.info({
-      title: '销售单详情',
-      content: (
-        <div>
-          <p>单据编号：{record.orderNo}</p>
-          <p>客户：{record.customer?.name}</p>
-          <p>仓库：{record.warehouse?.name}</p>
-          <p>订单日期：{record.orderDate}</p>
-          <p>订单金额：¥{record.totalAmount?.toFixed(2) || '0.00'}</p>
-          <p>最终金额：¥{record.finalAmount?.toFixed(2) || '0.00'}</p>
-        </div>
-      ),
-    });
+  const fetchData = async (page = 1, pageSize = 10) => {
+    setLoading(true);
+    try {
+      const result = await saleService.getSales({ page, pageSize, status: statusFilter });
+      setData(result.list);
+      setPagination({ current: page, pageSize, total: result.total });
+    } catch (error: any) {
+      message.error(error.response?.data?.message || '获取数据失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [statusFilter]);
+
+  const handleView = async (record: SaleOrder) => {
+    try {
+      const order = await saleService.getSale(record.id);
+      setSelectedOrder(order);
+      setDetailVisible(true);
+    } catch (error: any) {
+      message.error('获取详情失败');
+    }
   };
 
   const handleApprove = (record: SaleOrder) => {
     Modal.confirm({
       title: '审批确认',
       content: `确认审批销售单 ${record.orderNo}？`,
-      onOk: () => {
-        message.success('审批成功');
+      onOk: async () => {
+        try {
+          await saleService.approveSale(record.id);
+          message.success('审批成功');
+          fetchData();
+        } catch (error: any) {
+          message.error(error.response?.data?.message || '审批失败');
+        }
       },
     });
   };
 
-  const handleOutbound = (record: SaleOrder) => {
+  const handleShip = (record: SaleOrder) => {
     Modal.confirm({
       title: '出库确认',
       content: `确认将销售单 ${record.orderNo} 出库？`,
-      onOk: () => {
-        message.success('出库成功');
+      onOk: async () => {
+        try {
+          await saleService.shipSale(record.id);
+          message.success('出库成功');
+          fetchData();
+        } catch (error: any) {
+          message.error(error.response?.data?.message || '出库失败');
+        }
       },
     });
   };
 
-  const handleCreate = () => {
-    message.info('新建销售单功能开发中');
-  };
-
   const columns: ColumnsType<SaleOrder> = [
-    { title: '单据编号', dataIndex: 'orderNo', key: 'orderNo' },
+    { title: '单据编号', dataIndex: 'orderNo', key: 'orderNo', width: 150 },
     { title: '客户', dataIndex: ['customer', 'name'], key: 'customer' },
     { title: '仓库', dataIndex: ['warehouse', 'name'], key: 'warehouse' },
-    { title: '订单日期', dataIndex: 'orderDate', key: 'orderDate' },
-    { title: '订单金额', dataIndex: 'totalAmount', key: 'totalAmount',
+    { title: '订单金额', dataIndex: 'totalAmount', key: 'totalAmount', width: 120,
       render: (v) => `¥${v?.toFixed(2) || '0.00'}` },
-    { title: '最终金额', dataIndex: 'finalAmount', key: 'finalAmount',
+    { title: '最终金额', dataIndex: 'finalAmount', key: 'finalAmount', width: 120,
       render: (v) => `¥${v?.toFixed(2) || '0.00'}` },
     {
       title: '状态',
       dataIndex: 'status',
       key: 'status',
+      width: 100,
       render: (v) => {
         const status = statusMap[v] || { color: 'default', text: v };
         return <Tag color={status.color}>{status.text}</Tag>;
@@ -88,11 +103,16 @@ const SaleList: React.FC = () => {
     {
       title: '操作',
       key: 'action',
+      width: 200,
       render: (_, record) => (
         <Space>
           <Button type="link" size="small" onClick={() => handleView(record)}>查看</Button>
-          {record.status === 'pending' && <Button type="link" size="small" onClick={() => handleApprove(record)}>审批</Button>}
-          {record.status === 'approved' && <Button type="link" size="small" onClick={() => handleOutbound(record)}>出库</Button>}
+          {record.status === 'pending' && (
+            <Button type="link" size="small" onClick={() => handleApprove(record)}>审批</Button>
+          )}
+          {record.status === 'approved' && (
+            <Button type="link" size="small" onClick={() => handleShip(record)}>出库</Button>
+          )}
         </Space>
       ),
     },
@@ -101,15 +121,111 @@ const SaleList: React.FC = () => {
   return (
     <div>
       <h2>销售管理</h2>
-      <Space style={{ marginBottom: 16 }}>
-        <Button type="primary" onClick={handleCreate}>新建销售单</Button>
+      <Space style={{ marginBottom: 16 }} wrap>
+        <Button type="primary" onClick={() => setModalVisible(true)}>新建销售单</Button>
+        <Select
+          placeholder="筛选状态"
+          allowClear
+          style={{ width: 120 }}
+          onChange={(v) => setStatusFilter(v)}
+        >
+          {Object.entries(statusMap).map(([k, v]) => (
+            <Select.Option key={k} value={k}>{v.text}</Select.Option>
+          ))}
+        </Select>
       </Space>
       <Table
         columns={columns}
         dataSource={data}
         loading={loading}
         rowKey="id"
+        locale={{ emptyText: <Empty description="暂无数据" /> }}
+        pagination={{
+          ...pagination,
+          showSizeChanger: true,
+          showQuickJumper: true,
+          showTotal: (total) => `共 ${total} 条`,
+          onChange: (page, pageSize) => fetchData(page, pageSize),
+        }}
       />
+      <Modal
+        title="新建销售单"
+        open={modalVisible}
+        onCancel={() => setModalVisible(false)}
+        footer={null}
+        width={900}
+        destroyOnClose
+      >
+        <SaleForm
+          onSuccess={() => {
+            setModalVisible(false);
+            fetchData();
+          }}
+          onCancel={() => setModalVisible(false)}
+        />
+      </Modal>
+      <Modal
+        title="销售单详情"
+        open={detailVisible}
+        onCancel={() => {
+          setDetailVisible(false);
+          setSelectedOrder(null);
+        }}
+        footer={
+          <Space>
+            {selectedOrder?.status === 'pending' && (
+              <Button type="primary" onClick={() => {
+                setDetailVisible(false);
+                handleApprove(selectedOrder);
+              }}>审批</Button>
+            )}
+            {selectedOrder?.status === 'approved' && (
+              <Button type="primary" onClick={() => {
+                setDetailVisible(false);
+                handleShip(selectedOrder);
+              }}>出库</Button>
+            )}
+            <Button onClick={() => setDetailVisible(false)}>关闭</Button>
+          </Space>
+        }
+        width={700}
+      >
+        {selectedOrder && (
+          <div>
+            <p><strong>单据编号：</strong>{selectedOrder.orderNo}</p>
+            <p><strong>客户：</strong>{selectedOrder.customer?.name}</p>
+            <p><strong>仓库：</strong>{selectedOrder.warehouse?.name}</p>
+            <p><strong>订单金额：</strong>¥{selectedOrder.totalAmount?.toFixed(2)}</p>
+            <p><strong>折扣金额：</strong>¥{selectedOrder.discountAmount?.toFixed(2)}</p>
+            <p><strong>最终金额：</strong>¥{selectedOrder.finalAmount?.toFixed(2)}</p>
+            <p><strong>状态：</strong>
+              <Tag color={statusMap[selectedOrder.status]?.color}>
+                {statusMap[selectedOrder.status]?.text}
+              </Tag>
+            </p>
+            {selectedOrder.items?.length > 0 && (
+              <>
+                <h4>销售明细</h4>
+                <Table
+                  size="small"
+                  dataSource={selectedOrder.items}
+                  rowKey="id"
+                  pagination={false}
+                  columns={[
+                    { title: '商品', dataIndex: ['product', 'name'], key: 'product' },
+                    { title: '商品编码', dataIndex: ['product', 'productCode'], key: 'code' },
+                    { title: '数量', dataIndex: 'quantity', key: 'quantity' },
+                    { title: '单价', dataIndex: 'salePrice', key: 'salePrice',
+                      render: (v) => `¥${v?.toFixed(2)}` },
+                    { title: '税率', dataIndex: 'taxRate', key: 'taxRate',
+                      render: (v) => `${v}%` },
+                  ]}
+                />
+              </>
+            )}
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };

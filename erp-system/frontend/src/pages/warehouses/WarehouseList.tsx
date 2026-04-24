@@ -1,28 +1,65 @@
-import React, { useState } from 'react';
-import { Table, Button, Space, Tag, message } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Table, Button, Space, Tag, Modal, message, Empty } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-
-interface Warehouse {
-  id: string;
-  name: string;
-  address: string;
-  manager: string;
-  phone: string;
-  capacity: number;
-  isActive: boolean;
-}
+import { warehouseService, type Warehouse } from '../../services';
+import WarehouseForm from './WarehouseForm';
 
 const WarehouseList: React.FC = () => {
-  const [data] = useState<Warehouse[]>([]);
-  const [loading] = useState(false);
+  const [data, setData] = useState<Warehouse[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [pagination, setPagination] = useState({ current: 1, pageSize: 10, total: 0 });
+  const [modalVisible, setModalVisible] = useState(false);
+  const [editingId, setEditingId] = useState<string | undefined>();
+  const [detailVisible, setDetailVisible] = useState(false);
+  const [selectedWarehouse, setSelectedWarehouse] = useState<Warehouse | null>(null);
 
-  const handleCreate = () => {
-    message.info('新增仓库功能开发中');
+  const fetchData = async (page = 1, pageSize = 10) => {
+    setLoading(true);
+    try {
+      const result = await warehouseService.getWarehouses({ page, pageSize });
+      setData(result.list);
+      setPagination({ current: page, pageSize, total: result.total });
+    } catch (error: any) {
+      message.error(error.response?.data?.message || '获取数据失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const handleEdit = (record: Warehouse) => {
+    setSelectedWarehouse(record);
+    setEditingId(record.id);
+    setModalVisible(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    Modal.confirm({
+      title: '确认删除',
+      content: '删除后无法恢复，确定要删除吗？',
+      onOk: async () => {
+        try {
+          await warehouseService.deleteWarehouse(id);
+          message.success('删除成功');
+          fetchData();
+        } catch (error: any) {
+          message.error(error.response?.data?.message || '删除失败');
+        }
+      },
+    });
+  };
+
+  const handleView = (record: Warehouse) => {
+    setSelectedWarehouse(record);
+    setDetailVisible(true);
   };
 
   const columns: ColumnsType<Warehouse> = [
     { title: '仓库名称', dataIndex: 'name', key: 'name' },
-    { title: '地址', dataIndex: 'address', key: 'address' },
+    { title: '地址', dataIndex: 'address', key: 'address', ellipsis: true },
     { title: '管理员', dataIndex: 'manager', key: 'manager' },
     { title: '联系电话', dataIndex: 'phone', key: 'phone' },
     { title: '容量', dataIndex: 'capacity', key: 'capacity' },
@@ -32,20 +69,101 @@ const WarehouseList: React.FC = () => {
       key: 'isActive',
       render: (v) => <Tag color={v ? 'green' : 'red'}>{v ? '启用' : '禁用'}</Tag>,
     },
+    {
+      title: '操作',
+      key: 'action',
+      width: 180,
+      render: (_, record) => (
+        <Space>
+          <Button type="link" size="small" onClick={() => handleView(record)}>查看</Button>
+          <Button type="link" size="small" onClick={() => handleEdit(record)}>编辑</Button>
+          <Button type="link" size="small" danger onClick={() => handleDelete(record.id)}>删除</Button>
+        </Space>
+      ),
+    },
   ];
 
   return (
     <div>
       <h2>仓库管理</h2>
       <Space style={{ marginBottom: 16 }}>
-        <Button type="primary" onClick={handleCreate}>新增仓库</Button>
+        <Button
+          type="primary"
+          onClick={() => {
+            setEditingId(undefined);
+            setSelectedWarehouse(null);
+            setModalVisible(true);
+          }}
+        >
+          新增仓库
+        </Button>
       </Space>
       <Table
         columns={columns}
         dataSource={data}
         loading={loading}
         rowKey="id"
+        locale={{ emptyText: <Empty description="暂无数据" /> }}
+        pagination={{
+          ...pagination,
+          showSizeChanger: true,
+          showQuickJumper: true,
+          showTotal: (total) => `共 ${total} 条`,
+          onChange: (page, pageSize) => fetchData(page, pageSize),
+        }}
       />
+      <Modal
+        title={editingId ? '编辑仓库' : '新增仓库'}
+        open={modalVisible}
+        onCancel={() => {
+          setModalVisible(false);
+          setSelectedWarehouse(null);
+        }}
+        footer={null}
+        width={500}
+        destroyOnClose
+      >
+        <WarehouseForm
+          id={editingId}
+          initialValues={selectedWarehouse || undefined}
+          onSuccess={() => {
+            setModalVisible(false);
+            setSelectedWarehouse(null);
+            fetchData();
+          }}
+          onCancel={() => {
+            setModalVisible(false);
+            setSelectedWarehouse(null);
+          }}
+        />
+      </Modal>
+      <Modal
+        title="仓库详情"
+        open={detailVisible}
+        onCancel={() => {
+          setDetailVisible(false);
+          setSelectedWarehouse(null);
+        }}
+        footer={
+          <Button onClick={() => setDetailVisible(false)}>关闭</Button>
+        }
+        width={500}
+      >
+        {selectedWarehouse && (
+          <div>
+            <p><strong>仓库名称：</strong>{selectedWarehouse.name}</p>
+            <p><strong>地址：</strong>{selectedWarehouse.address || '-'}</p>
+            <p><strong>管理员：</strong>{selectedWarehouse.manager || '-'}</p>
+            <p><strong>联系电话：</strong>{selectedWarehouse.phone || '-'}</p>
+            <p><strong>容量：</strong>{selectedWarehouse.capacity || '-'}</p>
+            <p><strong>状态：</strong>
+              <Tag color={selectedWarehouse.isActive ? 'green' : 'red'}>
+                {selectedWarehouse.isActive ? '启用' : '禁用'}
+              </Tag>
+            </p>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };
