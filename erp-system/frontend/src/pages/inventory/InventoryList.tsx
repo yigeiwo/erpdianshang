@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Button, Space, Modal, message, Empty, Select, Tag } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { inventoryService, warehouseService, type Inventory, type InventoryLog } from '../../services';
+import { inventoryService, warehouseService, type Inventory, type InventoryLog, type Warehouse } from '../../services';
 import AdjustForm from './AdjustForm';
 
 const InventoryList: React.FC = () => {
@@ -20,8 +20,9 @@ const InventoryList: React.FC = () => {
       const result = await inventoryService.getInventory({ page, pageSize, warehouseId: warehouseFilter });
       setData(result.list);
       setPagination({ current: page, pageSize, total: result.total });
-    } catch (error: any) {
-      message.error(error.response?.data?.message || '获取数据失败');
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      message.error(err.response?.data?.message || '获取数据失败');
     } finally {
       setLoading(false);
     }
@@ -30,7 +31,7 @@ const InventoryList: React.FC = () => {
   const fetchWarehouses = async () => {
     try {
       const result = await warehouseService.getWarehouses({ pageSize: 100 });
-      setWarehouses(result.list.map(w => ({ id: (w as any).id || w.id, name: (w as any).name })));
+      setWarehouses(result.list.map((w: Warehouse) => ({ id: w.id, name: w.name })));
     } catch (error) {
       console.error('Failed to fetch warehouses:', error);
     }
@@ -41,16 +42,19 @@ const InventoryList: React.FC = () => {
     try {
       const result = await inventoryService.getLogs(undefined, warehouseFilter);
       setLogs(result);
-    } catch (error: any) {
-      message.error(error.response?.data?.message || '获取记录失败');
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      message.error(err.response?.data?.message || '获取记录失败');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchData();
     fetchWarehouses();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [warehouseFilter]);
 
   const logTypeMap: Record<string, { color: string; text: string }> = {

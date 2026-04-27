@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Form, Input, InputNumber, Button, Space, message, Table, Select } from 'antd';
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
-import { purchaseService, supplierService, warehouseService, productService, type CreatePurchaseOrderDto } from '../../services';
+import { purchaseService, supplierService, warehouseService, productService, type CreatePurchaseOrderDto, type Supplier, type Warehouse, type Product } from '../../services';
 
 interface PurchaseFormProps {
   onSuccess: () => void;
@@ -17,6 +17,21 @@ interface OrderItem {
   costPrice: number;
   unit: string;
   taxRate: number;
+}
+
+interface ApiError {
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
+}
+
+interface FormValues {
+  supplierId?: string;
+  warehouseId?: string;
+  discountAmount?: number;
+  remark?: string;
 }
 
 const PurchaseForm: React.FC<PurchaseFormProps> = ({ onSuccess, onCancel }) => {
@@ -35,13 +50,13 @@ const PurchaseForm: React.FC<PurchaseFormProps> = ({ onSuccess, onCancel }) => {
           warehouseService.getWarehouses({ pageSize: 100 }),
           productService.getProducts({ pageSize: 100 }),
         ]);
-        setSuppliers(supplierRes.list.map(s => ({ id: (s as any).id || s.id, name: (s as any).name })));
-        setWarehouses(warehouseRes.list.map(w => ({ id: (w as any).id || w.id, name: (w as any).name })));
-        setProducts(productRes.list.map(p => ({
-          id: (p as any).id || p.id,
-          name: (p as any).name,
-          productCode: (p as any).productCode,
-          costPrice: (p as any).costPrice || 0,
+        setSuppliers(supplierRes.list.map((s: Supplier) => ({ id: s.id, name: s.name })));
+        setWarehouses(warehouseRes.list.map((w: Warehouse) => ({ id: w.id, name: w.name })));
+        setProducts(productRes.list.map((p: Product) => ({
+          id: p.id,
+          name: p.name,
+          productCode: p.productCode || '',
+          costPrice: p.costPrice || 0,
         })));
       } catch (error) {
         console.error('Failed to fetch options:', error);
@@ -61,7 +76,7 @@ const PurchaseForm: React.FC<PurchaseFormProps> = ({ onSuccess, onCancel }) => {
     setItems(items.filter(item => item.key !== key));
   };
 
-  const updateItem = (key: string, field: keyof OrderItem, value: any) => {
+  const updateItem = (key: string, field: keyof OrderItem, value: string | number) => {
     setItems(items.map(item => {
       if (item.key === key) {
         const updated = { ...item, [field]: value };
@@ -77,7 +92,7 @@ const PurchaseForm: React.FC<PurchaseFormProps> = ({ onSuccess, onCancel }) => {
     }));
   };
 
-  const handleSubmit = async (values: any) => {
+  const handleSubmit = async (values: FormValues) => {
     if (items.length === 0) {
       message.error('请添加采购明细');
       return;
@@ -91,8 +106,8 @@ const PurchaseForm: React.FC<PurchaseFormProps> = ({ onSuccess, onCancel }) => {
     setLoading(true);
     try {
       const data: CreatePurchaseOrderDto = {
-        supplierId: values.supplierId,
-        warehouseId: values.warehouseId,
+        supplierId: values.supplierId || '',
+        warehouseId: values.warehouseId || '',
         discountAmount: values.discountAmount || 0,
         remark: values.remark,
         items: validItems.map(item => ({
@@ -107,8 +122,9 @@ const PurchaseForm: React.FC<PurchaseFormProps> = ({ onSuccess, onCancel }) => {
       await purchaseService.createPurchase(data);
       message.success('创建成功');
       onSuccess();
-    } catch (error: any) {
-      message.error(error.response?.data?.message || '创建失败');
+    } catch (error: unknown) {
+      const err = error as ApiError;
+      message.error(err.response?.data?.message || '创建失败');
     } finally {
       setLoading(false);
     }

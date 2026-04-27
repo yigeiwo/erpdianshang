@@ -8,7 +8,7 @@ import {
   Res,
 } from '@nestjs/common';
 import { Response } from 'express';
-import { ImportExportService } from './import-export.service';
+import { ImportExportService, ImportRow } from './import-export.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('import-export')
@@ -32,17 +32,17 @@ export class ImportExportController {
   }
 
   @Post('import/products')
-  async importProducts(@Body() data: any[]) {
+  async importProducts(@Body() data: ImportRow[]) {
     return this.importExportService.importProducts(data);
   }
 
   @Post('import/suppliers')
-  async importSuppliers(@Body() data: any[]) {
+  async importSuppliers(@Body() data: ImportRow[]) {
     return this.importExportService.importSuppliers(data);
   }
 
   @Post('import/customers')
-  async importCustomers(@Body() data: any[]) {
+  async importCustomers(@Body() data: ImportRow[]) {
     return this.importExportService.importCustomers(data);
   }
 }

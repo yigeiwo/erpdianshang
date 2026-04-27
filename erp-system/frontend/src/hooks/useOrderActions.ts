@@ -9,9 +9,17 @@ interface OrderActionsOptions<T> {
     actionName: string;
     confirmTitle: string;
     confirmContent: (order: T) => string;
-    execute: (id: string) => Promise<any>;
+    execute: (id: string) => Promise<unknown>;
     successMessage: string;
   }>;
+}
+
+interface ApiError {
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
 }
 
 export function useOrderActions<T extends { id: string; status: string }>(
@@ -31,15 +39,16 @@ export function useOrderActions<T extends { id: string; status: string }>(
             await action.execute(order.id);
             message.success(action.successMessage);
             fetchOrder();
-          } catch (error: any) {
-            message.error(error.response?.data?.message || `${action.successMessage}失败`);
+          } catch (error: unknown) {
+            const err = error as ApiError;
+            message.error(err.response?.data?.message || `${action.successMessage}失败`);
           } finally {
             setLoading(false);
           }
         },
       });
     },
-    [fetchOrder, actions]
+    [fetchOrder]
   );
 
   const getAvailableActions = useCallback(

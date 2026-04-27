@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { databaseConfig, jwtConfig, appConfig } from './config';
+import { ScheduleModule } from '@nestjs/schedule';
+import { databaseConfig, jwtConfig, appConfig, jijiaConfig } from './config';
+import { CommonModule } from './modules/common/common.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
 import { SupplierModule } from './modules/supplier/supplier.module';
@@ -14,12 +16,15 @@ import { SaleModule } from './modules/sale/sale.module';
 import { DataSourceModule } from './modules/data-source/data-source.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { ImportExportModule } from './modules/import-export/import-export.module';
+import { PlatformOrderModule } from './modules/platform-order/platform-order.module';
+import { PlatformInventoryModule } from './modules/platform-inventory/platform-inventory.module';
+import { PlatformProductModule } from './modules/platform-product/platform-product.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [databaseConfig, jwtConfig, appConfig],
+      load: [databaseConfig, jwtConfig, appConfig, jijiaConfig],
       envFilePath: '.env',
     }),
     TypeOrmModule.forRootAsync({
@@ -37,6 +42,8 @@ import { ImportExportModule } from './modules/import-export/import-export.module
       }),
       inject: [ConfigService],
     }),
+    ScheduleModule.forRoot(),
+    CommonModule,
     AuthModule,
     UserModule,
     SupplierModule,
@@ -49,6 +56,9 @@ import { ImportExportModule } from './modules/import-export/import-export.module
     DataSourceModule,
     AnalyticsModule,
     ImportExportModule,
+    PlatformOrderModule,
+    PlatformInventoryModule,
+    PlatformProductModule,
   ],
 })
 export class AppModule {}

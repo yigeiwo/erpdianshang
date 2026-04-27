@@ -16,27 +16,32 @@ const SupplierList: React.FC = () => {
   const [detailVisible, setDetailVisible] = useState(false);
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
 
-  const fetchData = useCallback(async (page = 1, pageSize = 10) => {
-    setLoading(true);
+  const fetchData = useCallback(async (page = 1, pageSize = 10, isRefresh = false) => {
+    if (isRefresh) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
     try {
       const result = await supplierService.getSuppliers({ page, pageSize });
       setData(result.list);
       setPagination({ current: page, pageSize, total: result.total });
-    } catch (error: any) {
-      message.error(error.response?.data?.message || '获取数据失败');
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      message.error(err.response?.data?.message || '获取数据失败');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchData();
   }, [fetchData]);
 
   const handleRefresh = () => {
-    setRefreshing(true);
-    fetchData();
-    setTimeout(() => setRefreshing(false), 500);
+    fetchData(pagination.current, pagination.pageSize, true);
   };
 
   const handleEdit = (record: Supplier) => {
@@ -54,8 +59,9 @@ const SupplierList: React.FC = () => {
           await supplierService.deleteSupplier(id);
           message.success('删除成功');
           fetchData();
-        } catch (error: any) {
-          message.error(error.response?.data?.message || '删除失败');
+        } catch (error: unknown) {
+          const err = error as { response?: { data?: { message?: string } } };
+          message.error(err.response?.data?.message || '删除失败');
         }
       },
     });

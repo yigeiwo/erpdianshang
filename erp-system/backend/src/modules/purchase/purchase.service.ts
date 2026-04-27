@@ -5,6 +5,7 @@ import { PurchaseOrder, PurchaseOrderStatus } from './entities/purchase-order.en
 import { PurchaseItem } from './entities/purchase-item.entity';
 import { InventoryLog, InventoryLogType } from '../inventory/entities/inventory-log.entity';
 import { Product } from '../product/entities/product.entity';
+import { buildLikePattern } from '../../common/utils';
 import { CreatePurchaseOrderDto, UpdatePurchaseOrderDto, QueryPurchaseOrderDto } from './dto/purchase.dto';
 
 @Injectable()
@@ -88,7 +89,7 @@ export class PurchaseService {
 
     if (supplierId) queryBuilder.andWhere('p.supplierId = :supplierId', { supplierId });
     if (status) queryBuilder.andWhere('p.status = :status', { status });
-    if (orderNo) queryBuilder.andWhere('p.orderNo LIKE :orderNo', { orderNo: `%${orderNo}%` });
+    if (orderNo) queryBuilder.andWhere('p.orderNo LIKE :orderNo', { orderNo: buildLikePattern(orderNo) });
 
     queryBuilder.leftJoinAndSelect('p.supplier', 'supplier');
     queryBuilder.leftJoinAndSelect('p.warehouse', 'warehouse');

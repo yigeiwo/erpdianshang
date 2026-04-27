@@ -1,10 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { Form, Input, InputNumber, Button, Space, message, Select } from 'antd';
-import { inventoryService, warehouseService, productService } from '../../services';
+import { inventoryService, warehouseService, productService, type Warehouse, type Product, type AdjustInventoryDto } from '../../services';
 
 interface AdjustFormProps {
   onSuccess: () => void;
   onCancel: () => void;
+}
+
+interface FormValues {
+  productId?: string;
+  warehouseId?: string;
+  quantity?: number;
+  type?: 'add' | 'reduce' | 'set';
+  reason?: string;
+}
+
+interface ApiError {
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
 }
 
 const AdjustForm: React.FC<AdjustFormProps> = ({ onSuccess, onCancel }) => {
@@ -20,11 +36,11 @@ const AdjustForm: React.FC<AdjustFormProps> = ({ onSuccess, onCancel }) => {
           warehouseService.getWarehouses({ pageSize: 100 }),
           productService.getProducts({ pageSize: 100 }),
         ]);
-        setWarehouses(warehouseRes.list.map(w => ({ id: (w as any).id || w.id, name: (w as any).name })));
-        setProducts(productRes.list.map(p => ({
-          id: (p as any).id || p.id,
-          name: (p as any).name,
-          productCode: (p as any).productCode,
+        setWarehouses(warehouseRes.list.map((w: Warehouse) => ({ id: w.id, name: w.name })));
+        setProducts(productRes.list.map((p: Product) => ({
+          id: p.id,
+          name: p.name,
+          productCode: p.productCode || '',
         })));
       } catch (error) {
         console.error('Failed to fetch options:', error);
@@ -33,24 +49,26 @@ const AdjustForm: React.FC<AdjustFormProps> = ({ onSuccess, onCancel }) => {
     fetchOptions();
   }, []);
 
-  const handleSubmit = async (values: any) => {
+  const handleSubmit = async (values: FormValues) => {
     if (!values.productId || !values.warehouseId) {
       message.error('请选择商品和仓库');
       return;
     }
     setLoading(true);
     try {
-      await inventoryService.adjustInventory({
+      const data: AdjustInventoryDto = {
         productId: values.productId,
         warehouseId: values.warehouseId,
-        quantity: values.quantity,
-        type: values.type,
-        reason: values.reason,
-      });
+        quantity: values.quantity || 0,
+        type: values.type || 'add',
+        reason: values.reason || '',
+      };
+      await inventoryService.adjustInventory(data);
       message.success('调整成功');
       onSuccess();
-    } catch (error: any) {
-      message.error(error.response?.data?.message || '调整失败');
+    } catch (error: unknown) {
+      const err = error as ApiError;
+      message.error(err.response?.data?.message || '调整失败');
     } finally {
       setLoading(false);
     }

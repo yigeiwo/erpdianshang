@@ -30,11 +30,13 @@ export class PermissionsGuard implements CanActivate {
       throw new ForbiddenException('No permissions');
     }
 
-    const hasPermission = user.roles.some((role) =>
-      role.permissions?.some(
-        (permission) =>
-          requiredPermissions.includes(`${permission.resource}:${permission.action}`) ||
-          requiredPermissions.includes(permission.name),
+    const hasPermission = requiredPermissions.every((required) =>
+      user.roles.some((role) =>
+        role.permissions?.some(
+          (permission) =>
+            required === `${permission.resource}:${permission.action}` ||
+            required === permission.name,
+        ),
       ),
     );
 

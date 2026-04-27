@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Customer } from './entities/customer.entity';
 import { CreateCustomerDto, UpdateCustomerDto, QueryCustomerDto } from './dto/customer.dto';
+import { buildLikePattern } from '../../common/utils';
 
 @Injectable()
 export class CustomerService {
@@ -20,9 +21,9 @@ export class CustomerService {
     const { name, contactPerson, phone, page = 1, pageSize = 10 } = query;
     const queryBuilder = this.customerRepository.createQueryBuilder('c');
 
-    if (name) queryBuilder.andWhere('c.name LIKE :name', { name: `%${name}%` });
-    if (contactPerson) queryBuilder.andWhere('c.contactPerson LIKE :cp', { cp: `%${contactPerson}%` });
-    if (phone) queryBuilder.andWhere('c.phone LIKE :phone', { phone: `%${phone}%` });
+    if (name) queryBuilder.andWhere('c.name LIKE :name', { name: buildLikePattern(name) });
+    if (contactPerson) queryBuilder.andWhere('c.contactPerson LIKE :cp', { cp: buildLikePattern(contactPerson) });
+    if (phone) queryBuilder.andWhere('c.phone LIKE :phone', { phone: buildLikePattern(phone) });
 
     const [list, total] = await queryBuilder
       .skip((page - 1) * pageSize)

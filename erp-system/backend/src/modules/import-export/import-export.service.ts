@@ -7,7 +7,28 @@ import { Customer } from '../customer/entities/customer.entity';
 
 export interface ExportData {
   type: 'products' | 'suppliers' | 'customers';
-  data: any[];
+  data: Record<string, unknown>[];
+}
+
+type ImportValue = string | number | boolean | null | undefined;
+
+export interface ImportRow {
+  productCode?: ImportValue;
+  name?: ImportValue;
+  barcode?: ImportValue;
+  unit?: ImportValue;
+  costPrice?: ImportValue;
+  salePrice?: ImportValue;
+  minStock?: ImportValue;
+  maxStock?: ImportValue;
+  description?: ImportValue;
+  isActive?: ImportValue;
+  contactPerson?: ImportValue;
+  phone?: ImportValue;
+  email?: ImportValue;
+  address?: ImportValue;
+  remark?: ImportValue;
+  [key: string]: ImportValue;
 }
 
 export interface ImportResult {
@@ -83,7 +104,7 @@ export class ImportExportService {
     return { type: 'customers', data };
   }
 
-  async importProducts(data: any[]): Promise<ImportResult> {
+  async importProducts(data: ImportRow[]): Promise<ImportResult> {
     const result: ImportResult = { success: 0, failed: 0, errors: [] };
 
     for (const row of data) {
@@ -95,7 +116,7 @@ export class ImportExportService {
         }
 
         const existing = await this.productRepository.findOne({
-          where: { productCode: row.productCode },
+          where: { productCode: String(row.productCode) },
         });
 
         if (existing) {
@@ -112,22 +133,23 @@ export class ImportExportService {
           await this.productRepository.save(existing);
         } else {
           const product = this.productRepository.create({
-            productCode: row.productCode,
-            name: row.name,
-            barcode: row.barcode,
-            unit: row.unit || '件',
-            costPrice: row.costPrice || 0,
-            salePrice: row.salePrice || 0,
-            minStock: row.minStock || 0,
-            maxStock: row.maxStock || 0,
-            description: row.description,
+            productCode: String(row.productCode),
+            name: String(row.name),
+            barcode: row.barcode ? String(row.barcode) : undefined,
+            unit: row.unit ? String(row.unit) : '件',
+            costPrice: row.costPrice ? Number(row.costPrice) : 0,
+            salePrice: row.salePrice ? Number(row.salePrice) : 0,
+            minStock: Number(row.minStock) || 0,
+            maxStock: Number(row.maxStock) || 0,
+            description: row.description ? String(row.description) : undefined,
             isActive: row.isActive !== false,
-          });
+          } as Partial<Product>);
           await this.productRepository.save(product);
         }
         result.success++;
-      } catch (error: any) {
-        result.errors.push(`导入失败: ${JSON.stringify(row)} - ${error?.message || String(error)}`);
+      } catch (error: unknown) {
+        const err = error as Error;
+        result.errors.push(`导入失败: ${JSON.stringify(row)} - ${err?.message || String(error)}`);
         result.failed++;
       }
     }
@@ -135,7 +157,7 @@ export class ImportExportService {
     return result;
   }
 
-  async importSuppliers(data: any[]): Promise<ImportResult> {
+  async importSuppliers(data: ImportRow[]): Promise<ImportResult> {
     const result: ImportResult = { success: 0, failed: 0, errors: [] };
 
     for (const row of data) {
@@ -147,18 +169,19 @@ export class ImportExportService {
         }
 
         const supplier = this.supplierRepository.create({
-          name: row.name,
-          contactPerson: row.contactPerson,
-          phone: row.phone,
-          email: row.email,
-          address: row.address,
-          remark: row.remark,
+          name: String(row.name),
+          contactPerson: row.contactPerson ? String(row.contactPerson) : undefined,
+          phone: row.phone ? String(row.phone) : undefined,
+          email: row.email ? String(row.email) : undefined,
+          address: row.address ? String(row.address) : undefined,
+          remark: row.remark ? String(row.remark) : undefined,
           isActive: row.isActive !== false,
         });
         await this.supplierRepository.save(supplier);
         result.success++;
-      } catch (error: any) {
-        result.errors.push(`导入失败: ${JSON.stringify(row)} - ${error?.message || String(error)}`);
+      } catch (error: unknown) {
+        const err = error as Error;
+        result.errors.push(`导入失败: ${JSON.stringify(row)} - ${err?.message || String(error)}`);
         result.failed++;
       }
     }
@@ -166,7 +189,7 @@ export class ImportExportService {
     return result;
   }
 
-  async importCustomers(data: any[]): Promise<ImportResult> {
+  async importCustomers(data: ImportRow[]): Promise<ImportResult> {
     const result: ImportResult = { success: 0, failed: 0, errors: [] };
 
     for (const row of data) {
@@ -178,18 +201,19 @@ export class ImportExportService {
         }
 
         const customer = this.customerRepository.create({
-          name: row.name,
-          contactPerson: row.contactPerson,
-          phone: row.phone,
-          email: row.email,
-          address: row.address,
-          remark: row.remark,
+          name: String(row.name),
+          contactPerson: row.contactPerson ? String(row.contactPerson) : undefined,
+          phone: row.phone ? String(row.phone) : undefined,
+          email: row.email ? String(row.email) : undefined,
+          address: row.address ? String(row.address) : undefined,
+          remark: row.remark ? String(row.remark) : undefined,
           isActive: row.isActive !== false,
         });
         await this.customerRepository.save(customer);
         result.success++;
-      } catch (error: any) {
-        result.errors.push(`导入失败: ${JSON.stringify(row)} - ${error?.message || String(error)}`);
+      } catch (error: unknown) {
+        const err = error as Error;
+        result.errors.push(`导入失败: ${JSON.stringify(row)} - ${err?.message || String(error)}`);
         result.failed++;
       }
     }

@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { DataSourceService, CreatePlatformDto, UpdatePlatformDto, CreateSpiderConfigDto } from './data-source.service';
+import { SpiderConfig } from './entities/spider-config.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
@@ -49,7 +50,7 @@ export class DataSourceController {
   }
 
   @Put('spider-configs/:id')
-  updateSpiderConfig(@Param('id') id: string, @Body() dto: any) {
+  updateSpiderConfig(@Param('id') id: string, @Body() dto: Partial<SpiderConfig>) {
     return this.dataSourceService.updateSpiderConfig(id, dto);
   }
 

@@ -10,8 +10,15 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:3000',
         changeOrigin: true,
+        configure: (proxy) => {
+          proxy.on('proxyReq', (proxyReq) => {
+            if (proxyReq.getHeader('origin')) {
+              proxyReq.setHeader('origin', 'http://localhost:3000');
+            }
+          });
+        },
       },
     },
-    allowedHosts: ['.monkeycode-ai.online'] as any,
+    allowedHosts: ['.monkeycode-ai.online'] as const,
   },
 })

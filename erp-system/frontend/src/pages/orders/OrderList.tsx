@@ -3,7 +3,7 @@ import { Table, Button, Tag, Card, Row, Col, Statistic, Tabs } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { useNavigate } from 'react-router-dom';
 import { ReloadOutlined, FileTextOutlined, ShoppingOutlined, ShoppingCartOutlined } from '@ant-design/icons';
-import { purchaseService, saleService } from '../../services';
+import { purchaseService, saleService, type PurchaseOrder, type SaleOrder } from '../../services';
 import { statusMap, formatMoney, formatDate } from '../../constants';
 
 interface UnifiedOrder {
@@ -20,7 +20,7 @@ interface UnifiedOrder {
   customerName?: string;
   warehouseName?: string;
   creatorName?: string;
-  items?: any[];
+  items?: unknown[];
 }
 
 const getTypeTag = (type: string) => {
@@ -44,7 +44,7 @@ const OrderList: React.FC = () => {
         saleService.getSales({ page: 1, pageSize: 100 }),
       ]);
 
-      const purchaseData: UnifiedOrder[] = (pRes.list as any[]).map((item: any) => ({
+      const purchaseData: UnifiedOrder[] = (pRes.list as PurchaseOrder[]).map((item) => ({
         id: item.id,
         orderNo: item.orderNo,
         type: 'purchase',
@@ -60,7 +60,7 @@ const OrderList: React.FC = () => {
         items: item.items,
       }));
 
-      const saleData: UnifiedOrder[] = (sRes.list as any[]).map((item: any) => ({
+      const saleData: UnifiedOrder[] = (sRes.list as SaleOrder[]).map((item) => ({
         id: item.id,
         orderNo: item.orderNo,
         type: 'sale',
@@ -78,7 +78,7 @@ const OrderList: React.FC = () => {
 
       setPurchaseOrders(purchaseData);
       setSaleOrders(saleData);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('获取订单失败:', error);
     } finally {
       setRefreshing(false);
@@ -86,6 +86,7 @@ const OrderList: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchOrders();
   }, [fetchOrders]);
 

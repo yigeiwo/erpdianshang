@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { Form, Input, InputNumber, Select, Button, Card, message, Space } from 'antd';
 import { useNavigate } from 'react-router-dom';
-import { productService, supplierService } from '../../services';
+import { productService, supplierService, type Supplier, type CreateProductDto } from '../../services';
 
 const { Option } = Select;
 
@@ -11,25 +11,26 @@ interface ProductFormProps {
   onCancel?: () => void;
 }
 
+interface ApiError {
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
+}
+
 const ProductForm: React.FC<ProductFormProps> = ({ id, onSuccess, onCancel }) => {
   const [form] = Form.useForm();
   const navigate = useNavigate();
   const [loading, setLoading] = React.useState(false);
-  const [suppliers, setSuppliers] = React.useState<any[]>([]);
-
-  useEffect(() => {
-    fetchSuppliers();
-    if (id) {
-      fetchProduct();
-    }
-  }, [id]);
+  const [suppliers, setSuppliers] = React.useState<Supplier[]>([]);
 
   const fetchSuppliers = async () => {
     try {
       const result = await supplierService.getSuppliers({ page: 1, pageSize: 100 });
-      setSuppliers(result.list as any);
-    } catch (error) {
-      console.error('Failed to fetch suppliers:', error);
+      setSuppliers(result.list);
+    } catch {
+      console.error('Failed to fetch suppliers');
     }
   };
 
@@ -38,12 +39,22 @@ const ProductForm: React.FC<ProductFormProps> = ({ id, onSuccess, onCancel }) =>
     try {
       const product = await productService.getProduct(id);
       form.setFieldsValue(product);
-    } catch (error: any) {
-      message.error(error.response?.data?.message || '获取商品失败');
+    } catch (error: unknown) {
+      const err = error as ApiError;
+      message.error(err.response?.data?.message || '获取商品失败');
     }
   };
 
-  const onFinish = async (values: any) => {
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchSuppliers();
+    if (id) {
+      fetchProduct();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
+  const onFinish = async (values: CreateProductDto) => {
     setLoading(true);
     try {
       if (id) {
@@ -54,8 +65,9 @@ const ProductForm: React.FC<ProductFormProps> = ({ id, onSuccess, onCancel }) =>
         message.success('创建成功');
       }
       onSuccess?.();
-    } catch (error: any) {
-      message.error(error.response?.data?.message || '操作失败');
+    } catch (error: unknown) {
+      const err = error as ApiError;
+      message.error(err.response?.data?.message || '操作失败');
     } finally {
       setLoading(false);
     }

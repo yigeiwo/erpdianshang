@@ -2,8 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button, Space, Tag, Card, Table, Descriptions, message, Modal, Divider } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { saleService, type SaleOrder } from '../../services';
+import { saleService, type SaleOrder, type SaleOrderItem } from '../../services';
 import { statusMap, formatMoney, formatDate } from '../../constants';
+
+interface ApiError {
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
+}
 
 const SaleDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -11,24 +19,27 @@ const SaleDetail: React.FC = () => {
   const [order, setOrder] = useState<SaleOrder | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (id) {
-      fetchOrder();
-    }
-  }, [id]);
-
   const fetchOrder = async () => {
     if (!id) return;
     setLoading(true);
     try {
       const data = await saleService.getSale(id);
       setOrder(data);
-    } catch (error: any) {
-      message.error(error.response?.data?.message || '获取详情失败');
+    } catch (error: unknown) {
+      const err = error as ApiError;
+      message.error(err.response?.data?.message || '获取详情失败');
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (id) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      fetchOrder();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   const handleSubmit = () => {
     if (!order) return;
@@ -40,8 +51,9 @@ const SaleDetail: React.FC = () => {
           await saleService.submitSale(order.id);
           message.success('提交成功');
           fetchOrder();
-        } catch (error: any) {
-          message.error(error.response?.data?.message || '提交失败');
+        } catch (error: unknown) {
+          const err = error as ApiError;
+          message.error(err.response?.data?.message || '提交失败');
         }
       },
     });
@@ -57,8 +69,9 @@ const SaleDetail: React.FC = () => {
           await saleService.approveSale(order.id);
           message.success('审批成功');
           fetchOrder();
-        } catch (error: any) {
-          message.error(error.response?.data?.message || '审批失败');
+        } catch (error: unknown) {
+          const err = error as ApiError;
+          message.error(err.response?.data?.message || '审批失败');
         }
       },
     });
@@ -74,14 +87,15 @@ const SaleDetail: React.FC = () => {
           await saleService.shipSale(order.id);
           message.success('出库成功');
           fetchOrder();
-        } catch (error: any) {
-          message.error(error.response?.data?.message || '出库失败');
+        } catch (error: unknown) {
+          const err = error as ApiError;
+          message.error(err.response?.data?.message || '出库失败');
         }
       },
     });
   };
 
-  const columns: ColumnsType<any> = [
+  const columns: ColumnsType<SaleOrderItem> = [
     { title: '商品名称', dataIndex: ['product', 'name'], key: 'productName' },
     { title: '商品编码', dataIndex: ['product', 'productCode'], key: 'productCode' },
     { title: '数量', dataIndex: 'quantity', key: 'quantity', width: 100 },

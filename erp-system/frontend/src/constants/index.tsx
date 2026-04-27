@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { Tag } from 'antd';
 
 export const statusMap: Record<string, { color: string; text: string }> = {

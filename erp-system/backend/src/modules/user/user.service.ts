@@ -6,6 +6,7 @@ import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { QueryUserDto } from './dto/query-user.dto';
+import { buildLikePattern } from '../../common/utils';
 
 @Injectable()
 export class UserService {
@@ -42,13 +43,13 @@ export class UserService {
 
     if (username) {
       queryBuilder.andWhere('user.username LIKE :username', {
-        username: `%${username}%`,
+        username: buildLikePattern(username),
       });
     }
 
     if (email) {
       queryBuilder.andWhere('user.email LIKE :email', {
-        email: `%${email}%`,
+        email: buildLikePattern(email),
       });
     }
 

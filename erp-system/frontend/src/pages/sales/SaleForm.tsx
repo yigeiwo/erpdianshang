@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Form, Input, InputNumber, Button, Space, message, Table, Select } from 'antd';
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
-import { saleService, customerService, warehouseService, productService, type CreateSaleOrderDto } from '../../services';
+import { saleService, customerService, warehouseService, productService, type CreateSaleOrderDto, type Customer, type Warehouse, type Product } from '../../services';
 
 interface SaleFormProps {
   onSuccess: () => void;
@@ -16,6 +16,20 @@ interface OrderItem {
   quantity: number;
   salePrice: number;
   taxRate: number;
+}
+
+interface ApiError {
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
+}
+
+interface FormValues {
+  customerId?: string;
+  warehouseId?: string;
+  remark?: string;
 }
 
 const SaleForm: React.FC<SaleFormProps> = ({ onSuccess, onCancel }) => {
@@ -34,13 +48,13 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSuccess, onCancel }) => {
           warehouseService.getWarehouses({ pageSize: 100 }),
           productService.getProducts({ pageSize: 100 }),
         ]);
-        setCustomers(customerRes.list.map(c => ({ id: (c as any).id || c.id, name: (c as any).name })));
-        setWarehouses(warehouseRes.list.map(w => ({ id: (w as any).id || w.id, name: (w as any).name })));
-        setProducts(productRes.list.map(p => ({
-          id: (p as any).id || p.id,
-          name: (p as any).name,
-          productCode: (p as any).productCode,
-          salePrice: (p as any).salePrice || 0,
+        setCustomers(customerRes.list.map((c: Customer) => ({ id: c.id, name: c.name })));
+        setWarehouses(warehouseRes.list.map((w: Warehouse) => ({ id: w.id, name: w.name })));
+        setProducts(productRes.list.map((p: Product) => ({
+          id: p.id,
+          name: p.name,
+          productCode: p.productCode || '',
+          salePrice: p.salePrice || 0,
         })));
       } catch (error) {
         console.error('Failed to fetch options:', error);
@@ -60,7 +74,7 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSuccess, onCancel }) => {
     setItems(items.filter(item => item.key !== key));
   };
 
-  const updateItem = (key: string, field: keyof OrderItem, value: any) => {
+  const updateItem = (key: string, field: keyof OrderItem, value: string | number) => {
     setItems(items.map(item => {
       if (item.key === key) {
         const updated = { ...item, [field]: value };
@@ -76,7 +90,7 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSuccess, onCancel }) => {
     }));
   };
 
-  const handleSubmit = async (values: any) => {
+  const handleSubmit = async (values: FormValues) => {
     if (items.length === 0) {
       message.error('请添加销售明细');
       return;
@@ -90,8 +104,8 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSuccess, onCancel }) => {
     setLoading(true);
     try {
       const data: CreateSaleOrderDto = {
-        customerId: values.customerId,
-        warehouseId: values.warehouseId,
+        customerId: values.customerId || '',
+        warehouseId: values.warehouseId || '',
         remark: values.remark,
         items: validItems.map(item => ({
           productId: item.productId,
@@ -103,8 +117,9 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSuccess, onCancel }) => {
       await saleService.createSale(data);
       message.success('创建成功');
       onSuccess();
-    } catch (error: any) {
-      message.error(error.response?.data?.message || '创建失败');
+    } catch (error: unknown) {
+      const err = error as ApiError;
+      message.error(err.response?.data?.message || '创建失败');
     } finally {
       setLoading(false);
     }

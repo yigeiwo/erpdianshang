@@ -4,6 +4,7 @@ import { Repository, DataSource } from 'typeorm';
 import { SaleOrder, SaleOrderStatus } from './entities/sale-order.entity';
 import { SaleItem } from './entities/sale-item.entity';
 import { InventoryLog, InventoryLogType } from '../inventory/entities/inventory-log.entity';
+import { buildLikePattern } from '../../common/utils';
 import { CreateSaleOrderDto, UpdateSaleOrderDto, QuerySaleOrderDto } from './dto/sale.dto';
 
 @Injectable()
@@ -91,7 +92,7 @@ export class SaleService {
 
     if (customerId) queryBuilder.andWhere('s.customerId = :customerId', { customerId });
     if (status) queryBuilder.andWhere('s.status = :status', { status });
-    if (orderNo) queryBuilder.andWhere('s.orderNo LIKE :orderNo', { orderNo: `%${orderNo}%` });
+    if (orderNo) queryBuilder.andWhere('s.orderNo LIKE :orderNo', { orderNo: buildLikePattern(orderNo) });
 
     queryBuilder.leftJoinAndSelect('s.customer', 'customer');
     queryBuilder.leftJoinAndSelect('s.warehouse', 'warehouse');

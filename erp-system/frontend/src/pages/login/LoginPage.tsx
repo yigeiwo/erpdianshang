@@ -10,14 +10,23 @@ const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const { login, register } = useAuthStore();
 
+  interface ApiError {
+    response?: {
+      data?: {
+        message?: string;
+      };
+    };
+  }
+
   const onLogin = async (values: { username: string; password: string }) => {
     setLoading(true);
     try {
       await login(values.username, values.password);
       message.success('登录成功');
       navigate('/dashboard');
-    } catch (error: any) {
-      message.error(error.response?.data?.message || '登录失败');
+    } catch (error: unknown) {
+      const err = error as ApiError;
+      message.error(err.response?.data?.message || '登录失败');
     } finally {
       setLoading(false);
     }
@@ -34,8 +43,9 @@ const LoginPage: React.FC = () => {
       await register(values);
       message.success('注册成功');
       navigate('/dashboard');
-    } catch (error: any) {
-      message.error(error.response?.data?.message || '注册失败');
+    } catch (error: unknown) {
+      const err = error as ApiError;
+      message.error(err.response?.data?.message || '注册失败');
     } finally {
       setLoading(false);
     }

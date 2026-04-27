@@ -19,6 +19,14 @@ const SupplierForm: React.FC<SupplierFormProps> = ({ id, initialValues, onSucces
     }
   }, [id, initialValues, form]);
 
+  interface ApiError {
+    response?: {
+      data?: {
+        message?: string;
+      };
+    };
+  }
+
   const handleSubmit = async (values: CreateSupplierDto) => {
     setLoading(true);
     try {
@@ -30,8 +38,9 @@ const SupplierForm: React.FC<SupplierFormProps> = ({ id, initialValues, onSucces
         message.success('创建成功');
       }
       onSuccess();
-    } catch (error: any) {
-      message.error(error.response?.data?.message || (id ? '更新失败' : '创建失败'));
+    } catch (error: unknown) {
+      const err = error as ApiError;
+      message.error(err.response?.data?.message || (id ? '更新失败' : '创建失败'));
     } finally {
       setLoading(false);
     }

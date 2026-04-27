@@ -16,27 +16,32 @@ const PurchaseList: React.FC = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string | undefined>();
 
-  const fetchData = useCallback(async (page = 1, pageSize = 10) => {
-    setLoading(true);
+  const fetchData = useCallback(async (page = 1, pageSize = 10, isRefresh = false) => {
+    if (isRefresh) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
     try {
       const result = await purchaseService.getPurchases({ page, pageSize, status: statusFilter });
       setData(result.list);
       setPagination({ current: page, pageSize, total: result.total });
-    } catch (error: any) {
-      message.error(error.response?.data?.message || '获取数据失败');
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      message.error(err.response?.data?.message || '获取数据失败');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, [statusFilter]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchData();
   }, [fetchData]);
 
   const handleRefresh = () => {
-    setRefreshing(true);
-    fetchData();
-    setTimeout(() => setRefreshing(false), 500);
+    fetchData(pagination.current, pagination.pageSize, true);
   };
 
   const handleView = (record: PurchaseOrder) => {
@@ -52,8 +57,9 @@ const PurchaseList: React.FC = () => {
           await purchaseService.submitPurchase(record.id);
           message.success('提交成功');
           fetchData();
-        } catch (error: any) {
-          message.error(error.response?.data?.message || '提交失败');
+        } catch (error: unknown) {
+          const err = error as { response?: { data?: { message?: string } } };
+          message.error(err.response?.data?.message || '提交失败');
         }
       },
     });
@@ -68,8 +74,9 @@ const PurchaseList: React.FC = () => {
           await purchaseService.approvePurchase(record.id);
           message.success('审批成功');
           fetchData();
-        } catch (error: any) {
-          message.error(error.response?.data?.message || '审批失败');
+        } catch (error: unknown) {
+          const err = error as { response?: { data?: { message?: string } } };
+          message.error(err.response?.data?.message || '审批失败');
         }
       },
     });
@@ -84,8 +91,9 @@ const PurchaseList: React.FC = () => {
           await purchaseService.completeIn(record.id);
           message.success('入库成功');
           fetchData();
-        } catch (error: any) {
-          message.error(error.response?.data?.message || '入库失败');
+        } catch (error: unknown) {
+          const err = error as { response?: { data?: { message?: string } } };
+          message.error(err.response?.data?.message || '入库失败');
         }
       },
     });

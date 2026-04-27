@@ -89,12 +89,12 @@ export class AuthService {
     };
 
     const accessToken = this.jwtService.sign(payload, {
-      secret: this.configService.get<string>('jwt.secret') || 'default-secret',
+      secret: this.configService.get<string>('jwt.secret'),
       expiresIn: 900,
     });
 
     const refreshToken = this.jwtService.sign(payload, {
-      secret: this.configService.get<string>('jwt.refreshSecret') || 'default-refresh-secret',
+      secret: this.configService.get<string>('jwt.refreshSecret'),
       expiresIn: 604800,
     });
 
@@ -107,7 +107,7 @@ export class AuthService {
         username: user.username,
         email: user.email,
         realName: user.realName,
-        roles: user.roles?.map((r: any) => r.name) || [],
+        roles: user.roles?.map((r) => r.name) || [],
       },
     };
   }

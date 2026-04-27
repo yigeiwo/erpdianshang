@@ -16,6 +16,10 @@ import PurchaseDetail from './pages/purchases/PurchaseDetail';
 import SaleList from './pages/sales/SaleList';
 import SaleDetail from './pages/sales/SaleDetail';
 import OrderList from './pages/orders/OrderList';
+import PlatformOrderList from './pages/platform-orders/PlatformOrderList';
+import InventorySummary from './pages/platform-inventory/InventorySummary';
+import CdInventoryList from './pages/platform-inventory/CdInventoryList';
+import EmagInventoryList from './pages/platform-inventory/EmagInventoryList';
 import FinancePage from './pages/finance/FinancePage';
 import SettingsPage from './pages/settings/SettingsPage';
 
@@ -75,6 +79,10 @@ const App: React.FC = () => {
             <Route path="sales" element={<SaleList />} />
             <Route path="sales/:id" element={<SaleDetail />} />
             <Route path="orders" element={<OrderList />} />
+            <Route path="platform-orders" element={<PlatformOrderList />} />
+            <Route path="inventory/summary" element={<InventorySummary />} />
+            <Route path="inventory/cd" element={<CdInventoryList />} />
+            <Route path="inventory/emag" element={<EmagInventoryList />} />
             <Route path="finance" element={<FinancePage />} />
             <Route path="settings" element={<SettingsPage />} />
           </Route>

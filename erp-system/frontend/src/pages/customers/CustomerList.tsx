@@ -8,7 +8,6 @@ import { formatMoney, isActiveTag } from '../../constants';
 
 const CustomerList: React.FC = () => {
   const [data, setData] = useState<Customer[]>([]);
-  const [, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [pagination, setPagination] = useState({ current: 1, pageSize: 10, total: 0 });
   const [modalVisible, setModalVisible] = useState(false);
@@ -17,26 +16,26 @@ const CustomerList: React.FC = () => {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
 
   const fetchData = useCallback(async (page = 1, pageSize = 10) => {
-    setLoading(true);
+    setRefreshing(true);
     try {
       const result = await customerService.getCustomers({ page, pageSize });
       setData(result.list);
       setPagination({ current: page, pageSize, total: result.total });
-    } catch (error: any) {
-      message.error(error.response?.data?.message || '获取数据失败');
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      message.error(err.response?.data?.message || '获取数据失败');
     } finally {
-      setLoading(false);
+      setRefreshing(false);
     }
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchData();
   }, [fetchData]);
 
   const handleRefresh = () => {
-    setRefreshing(true);
-    fetchData();
-    setTimeout(() => setRefreshing(false), 500);
+    fetchData(pagination.current, pagination.pageSize);
   };
 
   const handleEdit = (record: Customer) => {
@@ -54,8 +53,9 @@ const CustomerList: React.FC = () => {
           await customerService.deleteCustomer(id);
           message.success('删除成功');
           fetchData();
-        } catch (error: any) {
-          message.error(error.response?.data?.message || '删除失败');
+        } catch (error: unknown) {
+          const err = error as { response?: { data?: { message?: string } } };
+          message.error(err.response?.data?.message || '删除失败');
         }
       },
     });

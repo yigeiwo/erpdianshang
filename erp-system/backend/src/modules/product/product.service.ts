@@ -5,6 +5,7 @@ import { Product } from './entities/product.entity';
 import { CreateProductDto, UpdateProductDto, QueryProductDto } from './dto/product.dto';
 import { SaleItem } from '../sale/entities/sale-item.entity';
 import { SaleOrder } from '../sale/entities/sale-order.entity';
+import { buildLikePattern } from '../../common/utils';
 
 @Injectable()
 export class ProductService {
@@ -29,8 +30,8 @@ export class ProductService {
     const { name, productCode, categoryId, supplierId, isActive, page = 1, pageSize = 10 } = query;
     const queryBuilder = this.productRepository.createQueryBuilder('p');
 
-    if (name) queryBuilder.andWhere('p.name LIKE :name', { name: `%${name}%` });
-    if (productCode) queryBuilder.andWhere('p.productCode LIKE :pc', { pc: `%${productCode}%` });
+    if (name) queryBuilder.andWhere('p.name LIKE :name', { name: buildLikePattern(name) });
+    if (productCode) queryBuilder.andWhere('p.productCode LIKE :pc', { pc: buildLikePattern(productCode) });
     if (categoryId) queryBuilder.andWhere('p.categoryId = :categoryId', { categoryId });
     if (supplierId) queryBuilder.andWhere('p.supplierId = :supplierId', { supplierId });
     if (isActive !== undefined) queryBuilder.andWhere('p.isActive = :isActive', { isActive });

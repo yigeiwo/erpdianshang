@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Warehouse } from './entities/warehouse.entity';
 import { CreateWarehouseDto, UpdateWarehouseDto, QueryWarehouseDto } from './dto/warehouse.dto';
+import { buildLikePattern } from '../../common/utils';
 
 @Injectable()
 export class WarehouseService {
@@ -20,7 +21,7 @@ export class WarehouseService {
     const { name, page = 1, pageSize = 10 } = query;
     const queryBuilder = this.warehouseRepository.createQueryBuilder('w');
 
-    if (name) queryBuilder.andWhere('w.name LIKE :name', { name: `%${name}%` });
+    if (name) queryBuilder.andWhere('w.name LIKE :name', { name: buildLikePattern(name) });
 
     const [list, total] = await queryBuilder
       .skip((page - 1) * pageSize)

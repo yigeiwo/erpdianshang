@@ -194,11 +194,12 @@ export class DataSourceService {
       await this.platformRepository.update(platformId, { syncStatus: 'idle' });
 
       return { success: true, logId: syncLog.id };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as Error;
       await this.updateSyncLog(syncLog.id, {
         status: SyncStatus.FAILED,
         endTime: new Date(),
-        error: error?.message || String(error),
+        error: err?.message || String(error),
       });
       await this.platformRepository.update(platformId, { syncStatus: 'error' });
       throw error;
