@@ -5,7 +5,7 @@ import * as https from 'https';
 export interface JiJiaApiResponse<T = unknown> {
   code: string;
   data?: T;
-  messages?: string;
+  messages?: string | string[];
 }
 
 @Injectable()
@@ -114,7 +114,10 @@ export class JiJiaApiService {
             if (response.code === '000000' || response.code === 200) {
               resolve(response as JiJiaApiResponse<T>);
             } else {
-              this.logger.error(`API 返回错误: ${JSON.stringify(response.messages)}`);
+              const msg = Array.isArray(response.messages) 
+                ? response.messages.join(', ') 
+                : response.messages || 'Unknown error';
+              this.logger.error(`API 返回错误: ${msg}`);
               resolve(null);
             }
           } catch (e: unknown) {

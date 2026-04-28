@@ -24,7 +24,6 @@ class OrderSocket {
     });
 
     this.socket.on('connect', () => {
-      console.log('WebSocket connected');
       this.socket?.emit('subscribe');
     });
 
@@ -41,11 +40,9 @@ class OrderSocket {
     });
 
     this.socket.on('disconnect', () => {
-      console.log('WebSocket disconnected');
     });
 
-    this.socket.on('error', (error: Error) => {
-      console.error('WebSocket error:', error);
+    this.socket.on('error', () => {
     });
   }
 
