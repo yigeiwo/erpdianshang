@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Query,
+  Param,
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -30,7 +31,7 @@ export class PlatformOrderController {
   }
 
   @Get(':id')
-  async findOne(@Query('id') id: string) {
+  async findOne(@Param('id') id: string) {
     return this.platformOrderService.findOne(id);
   }
 }

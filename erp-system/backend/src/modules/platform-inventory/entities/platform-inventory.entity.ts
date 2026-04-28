@@ -13,6 +13,7 @@ export enum InventorySource {
 }
 
 @Entity('platform_inventory')
+@Index('idx_platform_sku_warehouse', ['platform', 'sku', 'warehouseId'])
 export class PlatformInventory {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -99,6 +100,7 @@ export class PlatformInventory {
   productManagerAccountName: string;
 
   @Column({ name: 'update_time', type: 'timestamp', nullable: true })
+  @Index('idx_update_time')
   updateTime: Date;
 
   @Column({ name: 'raw_data', type: 'jsonb', nullable: true })
