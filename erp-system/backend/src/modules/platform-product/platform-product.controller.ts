@@ -31,7 +31,7 @@ export class PlatformProductController {
   }
 
   @Get(':id')
-  async findOne(@Query('id') id: string) {
+  async findOne(@Param('id') id: string) {
     return this.platformProductService.findOne(id);
   }
 
