@@ -1,4 +1,4 @@
-import { Injectable, Logger, OnModuleInit, Inject, forwardRef } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, OnModuleDestroy, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Cron } from '@nestjs/schedule';
@@ -81,10 +81,12 @@ interface OrderStatistics {
   isSyncing: boolean;
 }
 
+type OrderRequestData = Record<string, string | number | undefined>;
+
 export { JiJiaOrderItem, JiJiaOrderRecord, JiJiaOrderResponse, OrderStatistics };
 
 @Injectable()
-export class PlatformOrderService implements OnModuleInit {
+export class PlatformOrderService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(PlatformOrderService.name);
   private lastSyncTime: Date | null = null;
   private isSyncing = false;
@@ -116,13 +118,20 @@ export class PlatformOrderService implements OnModuleInit {
     this.logger.log('平台订单同步服务已启动，每 3 分钟自动同步');
   }
 
+  onModuleDestroy() {
+    if (this.bufferFlushInterval) {
+      clearInterval(this.bufferFlushInterval);
+      this.bufferFlushInterval = null;
+    }
+  }
+
   private async fetchOrdersFromJiJia(
     page: number,
     pageSize: number,
     startTime?: string,
     endTime?: string,
   ): Promise<JiJiaOrderResponse | null> {
-    const requestData: Record<string, any> = {
+    const requestData: OrderRequestData = {
       page,
       pagesize: pageSize,
     };
@@ -135,7 +144,7 @@ export class PlatformOrderService implements OnModuleInit {
     const response = await this.jiJiaApiService.request<JiJiaOrderResponse>(
       '/platform/multiplatform/commonOrder/page',
       'POST',
-      requestData,
+      requestData as Record<string, unknown>,
     );
     return response?.data || null;
   }
