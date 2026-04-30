@@ -8,10 +8,69 @@ import { OrderGateway } from '../platform-order/order.gateway';
 import { JiJiaApiService } from '../common/ji-jia-api.service';
 import { buildLikePattern } from '../../common/utils';
 
+interface ProductRecord {
+  id?: string | number;
+  sku?: string;
+  name?: string;
+  briefName?: string;
+  category?: string;
+  categoryName?: string;
+  brand?: string;
+  brandName?: string;
+  productTypeName?: string;
+  unit?: string;
+  state?: string | number;
+  level?: string | number;
+  levelName?: string;
+  purchase?: string | number;
+  purchaseAccount?: string;
+  productManagerAccount?: string;
+  productManagerAccountId?: string;
+  productDeliveryDays?: string | number;
+  assembly?: string;
+  assemblyLaborCost?: string | number;
+  assemblyPackage?: string;
+  chineseCustomsName?: string;
+  englishCustomsName?: string;
+  customsCode?: string;
+  description?: string;
+  material?: string;
+  currencyCode?: string;
+  currencySymbol?: string;
+  smallImageUrl?: string;
+  packageL?: string | number;
+  packageW?: string | number;
+  packageH?: string | number;
+  packageWeight?: string | number;
+  singleProductSizeL?: string | number;
+  singleProductSizeW?: string | number;
+  singleProductSizeH?: string | number;
+  batteryAttribute?: boolean | string;
+  liquidAttribute?: boolean | string;
+  magneticAttribute?: boolean | string;
+  powderAttribute?: boolean | string;
+  chargedAttribute?: boolean | string;
+  woodenAttribute?: boolean | string;
+  clothing?: string | number;
+  isInspection?: string | number;
+  addDate?: string;
+  lastDate?: string;
+}
+
 interface ProductApiResponse {
-  rows: any[];
+  rows: ProductRecord[];
   total: number;
 }
+
+interface ProductStatistics {
+  total: number;
+  activeTotal: number;
+  categoryTop10: { category: string; count: string }[];
+  lastSyncTime: string | null;
+  isSyncing: boolean;
+}
+
+export { ProductRecord, ProductApiResponse, ProductStatistics };
 
 @Injectable()
 export class PlatformProductService implements OnModuleInit {
@@ -47,9 +106,9 @@ export class PlatformProductService implements OnModuleInit {
     return response?.data || null;
   }
 
-  private transformProductData(product: any): Partial<PlatformProduct> {
+  private transformProductData(product: ProductRecord): Partial<PlatformProduct> {
     return {
-      jijiaProductId: product.id || '',
+      jijiaProductId: String(product.id) || '',
       sku: product.sku || '',
       name: product.name || '',
       briefName: product.briefName || '',
@@ -59,16 +118,16 @@ export class PlatformProductService implements OnModuleInit {
       brandName: product.brandName || '',
       productTypeName: product.productTypeName || '',
       unit: product.unit || '',
-      state: parseInt(product.state) || 0,
-      level: parseInt(product.level) || 0,
+      state: Number(product.state) || 0,
+      level: Number(product.level) || 0,
       levelName: product.levelName || '',
-      purchase: parseInt(product.purchase) || 0,
+      purchase: Number(product.purchase) || 0,
       purchaseAccount: product.purchaseAccount || '',
       productManagerAccount: product.productManagerAccount || '',
       productManagerAccountId: product.productManagerAccountId || '',
-      productDeliveryDays: parseInt(product.productDeliveryDays) || 0,
+      productDeliveryDays: Number(product.productDeliveryDays) || 0,
       assembly: product.assembly || '',
-      assemblyLaborCost: parseFloat(product.assemblyLaborCost) || 0,
+      assemblyLaborCost: Number(product.assemblyLaborCost) || 0,
       assemblyPackage: product.assemblyPackage || '',
       chineseCustomsName: product.chineseCustomsName || '',
       englishCustomsName: product.englishCustomsName || '',
@@ -78,24 +137,24 @@ export class PlatformProductService implements OnModuleInit {
       currencyCode: product.currencyCode || '',
       currencySymbol: product.currencySymbol || '',
       smallImageUrl: product.smallImageUrl || '',
-      packageL: parseFloat(product.packageL) || 0,
-      packageW: parseFloat(product.packageW) || 0,
-      packageH: parseFloat(product.packageH) || 0,
-      packageWeight: parseFloat(product.packageWeight) || 0,
-      singleProductSizeL: parseFloat(product.singleProductSizeL) || 0,
-      singleProductSizeW: parseFloat(product.singleProductSizeW) || 0,
-      singleProductSizeH: parseFloat(product.singleProductSizeH) || 0,
-      batteryAttribute: product.batteryAttribute || '',
-      liquidAttribute: product.liquidAttribute || '',
-      magneticAttribute: product.magneticAttribute || '',
-      powderAttribute: product.powderAttribute || '',
-      chargedAttribute: product.chargedAttribute || '',
-      woodenAttribute: product.woodenAttribute || '',
-      clothing: parseInt(product.clothing) || 0,
-      isInspection: parseInt(product.isInspection) || 0,
+      packageL: Number(product.packageL) || 0,
+      packageW: Number(product.packageW) || 0,
+      packageH: Number(product.packageH) || 0,
+      packageWeight: Number(product.packageWeight) || 0,
+      singleProductSizeL: Number(product.singleProductSizeL) || 0,
+      singleProductSizeW: Number(product.singleProductSizeW) || 0,
+      singleProductSizeH: Number(product.singleProductSizeH) || 0,
+      batteryAttribute: String(product.batteryAttribute),
+      liquidAttribute: String(product.liquidAttribute),
+      magneticAttribute: String(product.magneticAttribute),
+      powderAttribute: String(product.powderAttribute),
+      chargedAttribute: String(product.chargedAttribute),
+      woodenAttribute: String(product.woodenAttribute),
+      clothing: Number(product.clothing) || 0,
+      isInspection: Number(product.isInspection) || 0,
       addDate: product.addDate ? new Date(product.addDate) : null,
       lastDate: product.lastDate ? new Date(product.lastDate) : null,
-      rawData: product,
+      rawData: product as unknown as Record<string, unknown>,
     };
   }
 
@@ -221,7 +280,7 @@ export class PlatformProductService implements OnModuleInit {
     });
   }
 
-  async getStatistics(): Promise<any> {
+  async getStatistics(): Promise<ProductStatistics> {
     const total = await this.productRepository.count();
     const activeTotal = await this.productRepository
       .createQueryBuilder('p')

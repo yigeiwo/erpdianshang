@@ -8,10 +8,80 @@ import { OrderGateway } from './order.gateway';
 import { JiJiaApiService } from '../common/ji-jia-api.service';
 import { buildLikePattern } from '../../common/utils';
 
+interface JiJiaOrderItem {
+  platformOrderLineId?: string;
+  sku?: string;
+  msku?: string;
+  productId?: string;
+  skuName?: string;
+  productName?: string;
+  productUnitPrice?: string | number;
+  productTotalPrice?: string | number;
+  buyQuantity?: string | number;
+  shippedQuantity?: string | number;
+  trackingNumber?: string;
+  platformWarehouseName?: string;
+  platformOrderLineStatus?: string;
+  platformOrderLineStatusName?: string;
+  linePerformingParty?: number;
+  orderPerformingParty?: number;
+  giftStatus?: string;
+  productMainImageUrl?: string;
+  listingUrl?: string;
+}
+
+interface JiJiaOrderRecord {
+  id?: string;
+  platformOrderId?: string;
+  orderingTime?: string;
+  paymentTime?: string;
+  platformId?: string;
+  erpShopId?: string;
+  erpShopName?: string;
+  regionCnName?: string;
+  orderType?: string;
+  orderCategory?: string;
+  platformOrderStatus?: string;
+  platformOrderStatusName?: string;
+  orderDeliveryStatus?: number;
+  orderCancelStatus?: number;
+  orderRefundStatus?: number;
+  totalAmount?: string | number;
+  buyerPayAmount?: string | number;
+  discountFee?: string | number;
+  platformCommission?: string | number;
+  refundedTotalAmount?: string | number;
+  currency?: string;
+  buyerAccountId?: string;
+  buyerAccountName?: string;
+  receiverName?: string;
+  receiverPhone?: string;
+  receiverMobilePhone?: string;
+  receiverAddressCountry?: string;
+  receiverAddressState?: string;
+  receiverAddressCity?: string;
+  receiverAddressDetail1?: string;
+  receiverAddressDetail2?: string;
+  receiverAddressPostCode?: string;
+  buyerMessage?: string;
+  customerMemo?: string;
+  items?: JiJiaOrderItem[];
+}
+
 interface JiJiaOrderResponse {
-  records: any[];
+  records: JiJiaOrderRecord[];
   total: number;
 }
+
+interface OrderStatistics {
+  totalOrders: number;
+  todayOrders: number;
+  totalAmount: number;
+  lastSyncTime: string | null;
+  isSyncing: boolean;
+}
+
+export { JiJiaOrderItem, JiJiaOrderRecord, JiJiaOrderResponse, OrderStatistics };
 
 @Injectable()
 export class PlatformOrderService implements OnModuleInit {
@@ -70,7 +140,7 @@ export class PlatformOrderService implements OnModuleInit {
     return response?.data || null;
   }
 
-  private transformOrderData(order: any): Partial<PlatformOrder> {
+  private transformOrderData(order: JiJiaOrderRecord): Partial<PlatformOrder> {
     return {
       platformOrderId: order.id || order.platformOrderId || '',
       orderingTime: order.orderingTime ? new Date(order.orderingTime) : null,
@@ -87,11 +157,11 @@ export class PlatformOrderService implements OnModuleInit {
       deliveryStatus: order.orderDeliveryStatus,
       cancelStatus: order.orderCancelStatus,
       refundStatus: order.orderRefundStatus,
-      totalAmount: parseFloat(order.totalAmount) || 0,
-      buyerPayAmount: parseFloat(order.buyerPayAmount) || 0,
-      discountFee: parseFloat(order.discountFee) || 0,
-      platformCommission: parseFloat(order.platformCommission) || 0,
-      refundedAmount: parseFloat(order.refundedTotalAmount) || 0,
+      totalAmount: Number(order.totalAmount) || 0,
+      buyerPayAmount: Number(order.buyerPayAmount) || 0,
+      discountFee: Number(order.discountFee) || 0,
+      platformCommission: Number(order.platformCommission) || 0,
+      refundedAmount: Number(order.refundedTotalAmount) || 0,
       currency: order.currency || 'USD',
       buyerAccountId: order.buyerAccountId || '',
       buyerAccountName: order.buyerAccountName || '',
@@ -106,13 +176,13 @@ export class PlatformOrderService implements OnModuleInit {
       receiverPostCode: order.receiverAddressPostCode || '',
       buyerMessage: order.buyerMessage || '',
       sellerMemo: order.customerMemo || '',
-      rawData: order,
+      rawData: order as unknown as Record<string, unknown>,
     };
   }
 
   private transformOrderItem(
     baseData: Partial<PlatformOrder>,
-    item: any,
+    item: JiJiaOrderItem,
   ): Partial<PlatformOrder> {
     return {
       ...baseData,
@@ -122,10 +192,10 @@ export class PlatformOrderService implements OnModuleInit {
       productId: item.productId || '',
       skuName: item.skuName || '',
       productName: item.productName || '',
-      productUnitPrice: parseFloat(item.productUnitPrice) || 0,
-      productTotalPrice: parseFloat(item.productTotalPrice) || 0,
-      buyQuantity: parseInt(item.buyQuantity) || 0,
-      shippedQuantity: parseInt(item.shippedQuantity) || 0,
+      productUnitPrice: Number(item.productUnitPrice) || 0,
+      productTotalPrice: Number(item.productTotalPrice) || 0,
+      buyQuantity: Number(item.buyQuantity) || 0,
+      shippedQuantity: Number(item.shippedQuantity) || 0,
       trackingNumber: item.trackingNumber || '',
       platformWarehouseName: item.platformWarehouseName || '',
       lineStatus: item.platformOrderLineStatus || '',
@@ -403,7 +473,7 @@ export class PlatformOrderService implements OnModuleInit {
     return this.platformOrderRepository.findOne({ where: { id } });
   }
 
-  async getStatistics(): Promise<any> {
+  async getStatistics(): Promise<OrderStatistics> {
     const totalOrders = await this.platformOrderRepository
       .createQueryBuilder('p')
       .where('p.platformOrderLineId IS NOT NULL AND p.platformOrderLineId != \'\'')

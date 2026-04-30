@@ -8,10 +8,58 @@ import { OrderGateway } from '../platform-order/order.gateway';
 import { JiJiaApiService } from '../common/ji-jia-api.service';
 import { buildLikePattern } from '../../common/utils';
 
+interface InventoryRecord {
+  warehouseId?: string;
+  warehouseName?: string;
+  sku?: string;
+  spu?: string;
+  productId?: string;
+  productName?: string;
+  productImageUrl?: string;
+  available?: string | number;
+  allocated?: string | number;
+  blocked?: string | number;
+  reserved?: string | number;
+  returnQuantity?: string | number;
+  total?: string | number;
+  unit?: string;
+  statusName?: string;
+  brandName?: string;
+  categoryName?: string;
+  productType?: string;
+  supplyModeName?: string;
+  avgUnitsOrdered7Days?: string | number;
+  avgUnitsOrdered15Days?: string | number;
+  avgUnitsOrdered30Days?: string | number;
+  singleQuantity?: string | number;
+  productDeliveryDays?: string | number;
+  productManagerAccountName?: string;
+  updateTime?: string;
+}
+
 interface InventoryApiResponse {
-  records: any[];
+  records: InventoryRecord[];
   total: number;
 }
+
+interface InventoryStatistics {
+  cdTotal: number;
+  emagTotal: number;
+  cdAvailable: number;
+  emagAvailable: number;
+  lastSyncTime: string | null;
+  isSyncing: boolean;
+}
+
+interface WarehouseSummaryResult {
+  platform: string;
+  warehouseName: string;
+  skuCount: string;
+  available: string;
+  total: string;
+}
+
+export { InventoryRecord, InventoryStatistics, WarehouseSummaryResult };
 
 @Injectable()
 export class PlatformInventoryService implements OnModuleInit {
@@ -35,7 +83,7 @@ export class PlatformInventoryService implements OnModuleInit {
     endpoint: string,
     page: number,
     pageSize: number,
-  ): Promise<{ records: any[] } | null> {
+  ): Promise<{ records: InventoryRecord[] } | null> {
     const response = await this.jiJiaApiService.request<InventoryApiResponse>(endpoint, 'POST', {
       page,
       pagesize: pageSize,
@@ -43,7 +91,7 @@ export class PlatformInventoryService implements OnModuleInit {
     return response?.data || null;
   }
 
-  private transformInventoryData(record: any, platform: string): Partial<PlatformInventory> {
+  private transformInventoryData(record: InventoryRecord, platform: string): Partial<PlatformInventory> {
     return {
       platform,
       warehouseId: record.warehouseId || '',
@@ -53,26 +101,26 @@ export class PlatformInventoryService implements OnModuleInit {
       productId: record.productId || '',
       productName: record.productName || '',
       productImageUrl: record.productImageUrl || '',
-      available: parseInt(record.available) || 0,
-      allocated: parseInt(record.allocated) || 0,
-      blocked: parseInt(record.blocked) || 0,
-      reserved: parseInt(record.reserved) || 0,
-      returnQuantity: parseInt(record.returnQuantity) || 0,
-      total: parseInt(record.total) || 0,
+      available: Number(record.available) || 0,
+      allocated: Number(record.allocated) || 0,
+      blocked: Number(record.blocked) || 0,
+      reserved: Number(record.reserved) || 0,
+      returnQuantity: Number(record.returnQuantity) || 0,
+      total: Number(record.total) || 0,
       unit: record.unit || '',
       statusName: record.statusName || '',
       brandName: record.brandName || '',
       categoryName: record.categoryName || '',
       productType: record.productType || '',
       supplyModeName: record.supplyModeName || '',
-      avgUnitsOrdered7Days: parseFloat(record.avgUnitsOrdered7Days) || 0,
-      avgUnitsOrdered15Days: parseFloat(record.avgUnitsOrdered15Days) || 0,
-      avgUnitsOrdered30Days: parseFloat(record.avgUnitsOrdered30Days) || 0,
-      singleQuantity: parseInt(record.singleQuantity) || 0,
-      productDeliveryDays: parseInt(record.productDeliveryDays) || 0,
+      avgUnitsOrdered7Days: Number(record.avgUnitsOrdered7Days) || 0,
+      avgUnitsOrdered15Days: Number(record.avgUnitsOrdered15Days) || 0,
+      avgUnitsOrdered30Days: Number(record.avgUnitsOrdered30Days) || 0,
+      singleQuantity: Number(record.singleQuantity) || 0,
+      productDeliveryDays: Number(record.productDeliveryDays) || 0,
       productManagerAccountName: record.productManagerAccountName || '',
       updateTime: record.updateTime ? new Date(record.updateTime) : null,
-      rawData: record,
+      rawData: record as unknown as Record<string, unknown>,
     };
   }
 
@@ -237,7 +285,7 @@ export class PlatformInventoryService implements OnModuleInit {
     return { list, total };
   }
 
-  async getStatistics(): Promise<any> {
+  async getStatistics(): Promise<InventoryStatistics> {
     const cdTotal = await this.inventoryRepository
       .createQueryBuilder('i')
       .where('i.platform = :platform', { platform: 'cd' })
@@ -270,7 +318,7 @@ export class PlatformInventoryService implements OnModuleInit {
     };
   }
 
-  async getWarehouseSummary(): Promise<any[]> {
+  async getWarehouseSummary(): Promise<WarehouseSummaryResult[]> {
     const result = await this.inventoryRepository
       .createQueryBuilder('i')
       .select('i.platform', 'platform')

@@ -4,9 +4,22 @@ import {
   SubscribeMessage,
   OnGatewayConnection,
   OnGatewayDisconnect,
+  MessageBody,
 } from '@nestjs/websockets';
 import { Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
+
+interface OrderUpdatePayload {
+  type: string;
+  order?: unknown;
+  orders?: unknown[];
+  total?: number;
+  timestamp: string;
+}
+
+interface SubscribePayload {
+  userId?: string;
+}
 
 @WebSocketGateway({
   cors: {
@@ -40,62 +53,52 @@ export class OrderGateway implements OnGatewayConnection, OnGatewayDisconnect {
   server: Server;
 
   private readonly logger = new Logger(OrderGateway.name);
-  private connectedClients = 0;
 
   handleConnection(client: Socket) {
-    this.connectedClients++;
-    this.logger.log(`Client connected: ${client.id}, Total: ${this.connectedClients}`);
+    this.logger.log(`Client connected: ${client.id}`);
   }
 
   handleDisconnect(client: Socket) {
-    this.connectedClients--;
-    this.logger.log(`Client disconnected: ${client.id}, Total: ${this.connectedClients}`);
+    this.logger.log(`Client disconnected: ${client.id}`);
   }
 
   @SubscribeMessage('subscribe')
-  handleSubscribe(client: Socket, payload: any) {
+  handleSubscribe(client: Socket, @MessageBody() payload: SubscribePayload) {
     this.logger.log(`Client ${client.id} subscribed to order updates`);
     client.join('order-updates');
     return { event: 'subscribed', data: { success: true } };
   }
 
-  emitNewOrders(orders: any[]) {
-    if (this.connectedClients > 0) {
-      this.server.to('order-updates').emit('new-orders', {
-        type: 'new',
-        orders,
-        timestamp: new Date().toISOString(),
-      });
-      this.logger.log(`Emitted ${orders.length} new orders to ${this.connectedClients} clients`);
-    }
+  emitNewOrders(orders: unknown[]) {
+    this.server.to('order-updates').emit('new-orders', {
+      type: 'new',
+      orders,
+      timestamp: new Date().toISOString(),
+    } as OrderUpdatePayload);
+    this.logger.log(`Emitted ${orders.length} new orders`);
   }
 
-  emitOrderUpdate(order: any) {
-    if (this.connectedClients > 0) {
-      this.server.to('order-updates').emit('order-updated', {
-        type: 'update',
-        order,
-        timestamp: new Date().toISOString(),
-      });
-    }
+  emitOrderUpdate(order: unknown) {
+    this.server.to('order-updates').emit('order-updated', {
+      type: 'update',
+      order,
+      timestamp: new Date().toISOString(),
+    } as OrderUpdatePayload);
   }
 
   emitSyncComplete(total: number) {
     this.server.to('order-updates').emit('sync-complete', {
+      type: 'sync',
       total,
       timestamp: new Date().toISOString(),
-    });
+    } as OrderUpdatePayload);
   }
 
-  emitInventoryUpdate(data: any) {
-    if (this.connectedClients > 0) {
-      this.server.to('order-updates').emit('inventory-update', data);
-    }
+  emitInventoryUpdate(data: unknown) {
+    this.server.to('order-updates').emit('inventory-update', data);
   }
 
-  emitProductUpdate(data: any) {
-    if (this.connectedClients > 0) {
-      this.server.to('order-updates').emit('product-update', data);
-    }
+  emitProductUpdate(data: unknown) {
+    this.server.to('order-updates').emit('product-update', data);
   }
 }
