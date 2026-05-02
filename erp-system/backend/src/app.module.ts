@@ -19,6 +19,7 @@ import { ImportExportModule } from './modules/import-export/import-export.module
 import { PlatformOrderModule } from './modules/platform-order/platform-order.module';
 import { PlatformInventoryModule } from './modules/platform-inventory/platform-inventory.module';
 import { PlatformProductModule } from './modules/platform-product/platform-product.module';
+import { HealthController } from './common/controllers/health.controller';
 
 @Module({
   imports: [
@@ -60,5 +61,6 @@ import { PlatformProductModule } from './modules/platform-product/platform-produ
     PlatformInventoryModule,
     PlatformProductModule,
   ],
+  controllers: [HealthController],
 })
 export class AppModule {}
