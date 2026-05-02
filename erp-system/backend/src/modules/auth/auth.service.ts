@@ -53,7 +53,12 @@ export class AuthService {
 
   async register(registerDto: RegisterDto) {
     try {
-      const user = await this.userService.create(registerDto as any);
+      const user = await this.userService.create({
+        username: registerDto.username,
+        email: registerDto.email,
+        password: registerDto.password,
+        realName: registerDto.realName,
+      });
       return this.generateTokens(user);
     } catch (error) {
       if (error instanceof ConflictException) {
